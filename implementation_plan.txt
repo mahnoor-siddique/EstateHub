@@ -1,0 +1,409 @@
+ESTATEHUB — IMPLEMENTATION PLAN Real Estate Property Listing & Booking
+Portal
+
+OBJECTIVE Build a polished, responsive real-estate portal called
+EstateHub using Next.js, TypeScript, Tailwind CSS and Supabase. Users
+should browse, search and filter properties, view detailed listings and
+galleries, view agents, contact agents, request viewings/bookings, and
+authenticate. First complete and test the website locally; Docker, AWS
+and Terraform are later phases.
+
+IMPORTANT RULES - Inspect the existing Next.js project before changing
+anything. - Use TypeScript and reusable components; do not put the whole
+application in one giant file. - Keep the site responsive on desktop,
+tablet and mobile. - Do not create fake buttons for planned working
+features. - Keep secrets in .env.local; never expose Supabase
+service-role credentials. - Do not start AWS/Terraform until the local
+website and Supabase integration are working. - Avoid unnecessary
+dependencies and unnecessary architecture. - After each major phase, run
+checks/build and fix errors before proceeding. - Do not delete working
+project code without first understanding it.
+
+VISUAL DIRECTION Premium, modern, minimal, professional
+luxury-real-estate aesthetic. Reference: the supplied real-estate design
+image. Colors: deep navy/charcoal, warm white/off-white, gold/beige
+accent, dark charcoal text, white cards. Use elegant large headings,
+clean modern body text, spacious sections, subtle shadows, medium
+rounded corners and restrained animations.
+
+HERO VIDEO The hero should support a cinematic luxury-house video.
+Desired concept: a car approaches a modern house, parks near the stairs,
+and exterior lights turn on as it arrives. The video should feel like a
+premium real-estate commercial. Use public/videos/hero-real-estate.mp4
+when available, with a high-quality fallback image. Use
+muted/autoplay/loop/playsInline where supported, a dark overlay for
+readable text, and sensible mobile/reduced-motion fallback. Hero text:
+“MODERN LIVING. BRIGHTER TOMORROWS.” “Discover space you truly belong
+in” “Explore verified properties for sale and rent across your favorite
+cities.” CTA: “Explore Properties” Optional: “Watch Full Video”
+
+NAVBAR Logo: EstateHub / Find Your Place Links: Home, Properties,
+Agents, About, Contact Right side: Login and Get Started Sticky desktop
+navigation; hamburger navigation on mobile; accessible keyboard/focus
+states.
+
+HOMEPAGE Order: 1. Navbar 2. Cinematic hero 3. Property search 4.
+Statistics 5. Featured properties 6. Popular cities 7. Why choose us 8.
+CTA 9. Footer
+
+Search fields: city/location, property type, price range, search.
+Property types: House, Apartment, Villa, Commercial. Listing types: For
+Sale, For Rent. Cities: Lahore, Islamabad, Karachi, Rawalpindi,
+Faisalabad, Multan. Example statistics: 1,200+ Properties, 350+ Trusted
+Agents, 15+ Cities, 98% Client Satisfaction. Featured property cards:
+image, sale/rent badge, price, title, location, beds, baths, area, view
+details. Popular city cards should link to filtered properties such as
+/properties?city=Lahore. Why Choose Us: Easy Search, Verified Listings,
+Trusted Agents, Easy Booking. CTA: “Let’s Find Your Perfect Property”.
+
+PROPERTY LISTINGS Route: /properties Include search, filter
+sidebar/drawer, property grid, sorting, loading/error/empty states.
+Filters: city, property type, listing type, min/max price, bedrooms,
+bathrooms, amenities. Sorting: newest, price low-high, price high-low.
+Use URL search parameters for filters. Cards link to /properties/[id].
+Filtering must eventually use real Supabase data.
+
+PROPERTY DETAILS Route: /properties/[id] Include back navigation, large
+image gallery, title, listing type, price, location, beds, baths, area,
+description, amenities, property information, agent card, Contact Agent
+and Book a Viewing. Gallery: main image, thumbnails, next/previous
+controls, responsive mobile behavior and fallback. Use Supabase data
+after integration. Show a friendly not-found state.
+
+AGENTS /agents: agent cards with photo, name, agency, short bio, listing
+count and profile link. /agents/[id]: profile, agency, bio, contact
+details where appropriate, listing count and properties.
+
+AUTHENTICATION Use Supabase Auth. Routes: /login and /signup. Signup:
+full name, email, password, confirm password. Login: email and password.
+Include validation, loading/error/success states, logout and protected
+actions. Use the current appropriate Next.js/Supabase integration
+pattern for the installed versions.
+
+BOOKING Provide a viewing/booking flow with property, date, time, name,
+email, phone and message. Statuses: Pending, Confirmed, Cancelled,
+Completed. Validate and save bookings to Supabase, show success/error
+states and prevent accidental duplicate submissions. Logged-in users
+should eventually be able to view their booking information.
+
+CONTACT AGENT Fields: name, email, phone, property, agent, message.
+Validate and save to Supabase contact_requests. Do not claim an email
+was sent unless an actual email service is implemented.
+
+SUPABASE DATA MODEL profiles/users: id, full_name, email, role,
+created_at Roles: user, agent.
+
+agents: id, user_id where appropriate, full_name, email, phone,
+profile_image, bio, agency_name, created_at.
+
+properties: id, agent_id, title, description, property_type,
+listing_type, price, city, area_location, address, bedrooms, bathrooms,
+area, year_built, parking_spaces, status, created_at, updated_at. Types:
+House, Apartment, Villa, Commercial. Listing types: For Sale, For Rent.
+Status: available, pending, sold, rented.
+
+property_images: id, property_id, image_url, storage_path, sort_order,
+created_at.
+
+bookings: id, user_id, property_id, agent_id, date, time, phone,
+message, status, created_at.
+
+contact_requests: id, user_id nullable, property_id nullable, agent_id
+nullable, name, email, phone, message, created_at.
+
+Use proper relationships and indexes.
+
+SUPABASE STORAGE Use Supabase Storage for property images rather than
+putting large collections of images in the repository. Store the
+relevant image URL/storage path in property_images. Configure access
+intentionally and never expose private credentials.
+
+SAMPLE DATA Use realistic demonstration data in PKR and Pakistani
+locations such as DHA Lahore, Bahria Town Lahore, DHA Islamabad, Bahria
+Town Islamabad, Clifton Karachi, Gulshan-e-Iqbal Karachi and Bahria Town
+Rawalpindi. Create enough properties to demonstrate search, filters and
+sorting.
+
+RESPONSIVE + ACCESSIBILITY Desktop: full nav, multi-column grids, filter
+sidebar, large hero. Tablet: adapted grids and compact navigation.
+Mobile: hamburger menu, single-column cards, filter drawer,
+touch-friendly controls, responsive gallery, no horizontal overflow. Use
+semantic HTML, labels, keyboard navigation, visible focus states,
+meaningful alt text and good contrast. Respect reduced-motion
+preferences where practical.
+
+PERFORMANCE Use Next.js image optimization where appropriate, lazy-load
+non-critical images, keep database queries efficient, avoid unnecessary
+client components, optimize the hero media and avoid unnecessary
+dependencies.
+
+SUGGESTED PROJECT STRUCTURE app/ page.tsx properties/page.tsx
+properties/[id]/page.tsx agents/page.tsx agents/[id]/page.tsx
+booking/page.tsx contact/page.tsx login/page.tsx signup/page.tsx
+
+components/ layout/ home/ properties/ agents/ booking/ contact/ auth/
+ui/
+
+lib/ supabase/ queries/ validations/ utils/
+
+types/ public/ images/ videos/
+
+Adapt the exact structure to the existing Next.js project rather than
+forcing it.
+
+ENVIRONMENT VARIABLES Use .env.local for local development,
+conceptually: NEXT_PUBLIC_SUPABASE_URL= NEXT_PUBLIC_SUPABASE_ANON_KEY=
+Never commit .env.local and never put service-role/database secrets in
+client code.
+
+DEVELOPMENT PHASES PHASE 1 — Foundation: Inspect project, confirm
+Next.js/TypeScript, configure Tailwind if needed, establish theme/fonts,
+base layout, Navbar and Footer.
+
+PHASE 2 — Homepage: Hero/video support, search, statistics, featured
+properties, cities, why-us, CTA, responsive design.
+
+PHASE 3 — Property experience: Listings, cards, search, filters,
+sorting, details, gallery.
+
+PHASE 4 — Agents: Agent listing, profiles and property listings.
+
+PHASE 5 — Supabase foundation: Create Supabase project, environment
+variables, client setup, schema, relationships and sample data.
+
+PHASE 6 — Connect frontend: Replace hard-coded property data with
+Supabase data; implement real filtering, sorting, details, images and
+agents.
+
+PHASE 7 — Authentication: Signup, login, logout, sessions and protected
+actions.
+
+PHASE 8 — Bookings/contact: Save and retrieve bookings and contact
+requests.
+
+PHASE 9 — Storage: Connect property image storage and records.
+
+PHASE 10 — Polish: Responsive testing, accessibility,
+loading/error/empty states, validation, performance, console-error
+cleanup and production build.
+
+PHASE 11 — Docker: Only after the local app works: Dockerfile, image
+build, local container testing.
+
+PHASE 12 — AWS + Terraform: Later, evaluate EC2, S3, IAM, Lambda, API
+Gateway and other services only where they have a genuine purpose.
+Automate infrastructure with Terraform using course concepts: variables,
+outputs, maps/for_each, modules, workspaces, locals, conditional
+expressions and depends_on. Do not artificially add services.
+
+CLAUDE CODE WORKING METHOD Work sequentially, not as one uncontrolled
+generation. At the start of each phase: 1. Inspect what exists. 2.
+Implement only the current phase. 3. Run appropriate checks/tests/build.
+4. Fix errors. 5. Briefly report what was completed. 6. Continue only
+when stable. Prefer simple maintainable solutions when unspecified. Do
+not invent major features or overwrite working code unnecessarily.
+
+LOCAL WEBSITE DEFINITION OF DONE The local website is complete when: -
+polished responsive homepage - cinematic hero/video support - working
+navigation - property search/filter/sorting - property details and
+gallery - agent pages - Supabase authentication - real Supabase property
+data - image storage strategy - working contact requests - working
+bookings - loading/error/empty states - mobile layout - no major console
+errors - production build succeeds
+
+FINAL INSTRUCTION This file is the master implementation plan for
+EstateHub. Use the supplied visual reference as the design direction.
+The project owner wants to understand the implementation, not merely
+receive generated code. Keep the architecture organized and explain
+important decisions. START WITH PHASE 1 ONLY. Do not start Supabase,
+Docker, AWS or Terraform until their designated phases are reached.
+
+======================================================================
+ADDITIONAL PRODUCTION REQUIREMENTS
+======================================================================
+
+SECURITY
+- Never commit .env.local or any secret.
+- Never expose the Supabase service-role key in client/browser code.
+- Use Supabase Row Level Security (RLS) and authorization policies.
+- Users must not access or modify another user's private data.
+- Agent operations must be restricted to authorized agents.
+- Validate input on the server as well as the client.
+- Do not trust client-side validation alone.
+- Avoid rendering unsanitized HTML.
+- Protect authenticated actions/routes.
+- Never log passwords, tokens, API keys or sensitive personal data.
+- Use secure HTTPS in deployment.
+- Keep dependencies reasonably updated and review vulnerabilities.
+- Use database constraints, foreign keys and appropriate indexes.
+
+TESTING
+- Test navigation, search, filters, sorting, property details and gallery.
+- Test signup, login, logout and session handling.
+- Test booking and contact submission with real Supabase data.
+- Test invalid IDs, missing data and unauthorized actions.
+- Test empty, invalid and extreme form inputs.
+- Test duplicate/rapid submissions.
+- Test desktop, tablet and mobile layouts.
+- Check for horizontal overflow and broken responsive components.
+- Run lint, TypeScript checks, production build and available tests.
+- Add useful unit/component/integration/E2E tests for critical flows where practical.
+
+ERROR HANDLING & OBSERVABILITY
+- Provide loading, error, empty and not-found states.
+- Handle database/network failures gracefully.
+- Keep useful development logs but never log secrets or sensitive data.
+- Later evaluate suitable monitoring/logging for the AWS deployment.
+
+SEO & WEB QUALITY
+- Add page titles and meta descriptions.
+- Use semantic headings and descriptive URLs.
+- Add Open Graph metadata where useful.
+- Add meaningful image alt text.
+- Add appropriate metadata for public property pages.
+- Never expose private user information in SEO metadata.
+
+MEDIA
+- Optimize images and video.
+- Use responsive image sizes and fallbacks.
+- Avoid huge uncompressed assets.
+- Provide a hero-video poster/fallback image.
+- Respect reduced-motion preferences.
+
+======================================================================
+REQUIRED CINEMATIC OPENING ANIMATION
+======================================================================
+
+The homepage MUST include the owner's requested cinematic opening concept.
+
+Sequence:
+1. Dark/evening luxury modern house scene.
+2. A car approaches the property.
+3. The car moves toward the driveway/stairs.
+4. The car stops/parks near the stairs.
+5. Exterior house/driveway lights turn on as the car arrives.
+6. The scene settles into the final beautifully illuminated hero state.
+7. EstateHub hero text and search CTA remain readable over the scene.
+
+This is an approved core homepage requirement, not an optional idea.
+Prefer a properly licensed/supplied video when available. Otherwise use a
+suitable video/animation approach. Do not attempt an unnecessarily heavy
+DOM-based simulation when a proper video asset is available.
+Provide an image fallback, mobile support, reduced-motion behavior and a
+way to access the site without waiting indefinitely for the animation.
+
+======================================================================
+GITHUB / VERSION CONTROL
+======================================================================
+
+Maintain GitHub throughout development.
+After every meaningful completed feature:
+1. Review changed files and git diff.
+2. Verify the feature.
+3. Run relevant lint/typecheck/build/tests.
+4. Commit with a clear message.
+5. Push to GitHub.
+
+Example commit messages:
+- feat: build responsive navbar
+- feat: add cinematic homepage hero
+- feat: add property filters
+- feat: connect properties to Supabase
+- feat: add authentication
+- feat: implement booking flow
+- fix: resolve property filter issue
+- chore: configure Docker
+
+Never commit .env.local, Supabase service-role credentials, AWS keys,
+Terraform secrets, generated credentials or unnecessary system files.
+Maintain a correct .gitignore.
+
+======================================================================
+README / DOCUMENTATION
+======================================================================
+
+Maintain a professional README containing, as the project grows:
+- Project overview
+- Features
+- Technology stack
+- Architecture
+- Local setup
+- Environment variables
+- Supabase setup
+- Database schema overview
+- Storage setup
+- Authentication
+- Testing
+- Production build
+- Docker
+- AWS deployment
+- Terraform
+- Screenshots where useful
+- Known limitations and future improvements
+
+Never put real secrets in documentation.
+
+======================================================================
+CI/CD — LATER PHASE
+======================================================================
+
+Do not add CI/CD during the initial website phase.
+After the application is stable, evaluate a simple GitHub workflow for
+installation, lint, typecheck, tests and production build. Deployment
+automation can be evaluated later for AWS.
+
+======================================================================
+FINAL PRODUCTION CHECKLIST
+======================================================================
+
+FUNCTIONAL:
+[ ] Homepage
+[ ] Navigation
+[ ] Cinematic hero
+[ ] Search
+[ ] Filters
+[ ] Sorting
+[ ] Property details
+[ ] Gallery
+[ ] Agents
+[ ] Authentication
+[ ] Booking
+[ ] Contact
+[ ] Supabase data
+[ ] Supabase Storage
+
+SECURITY:
+[ ] No secrets in repository
+[ ] .env.local ignored
+[ ] RLS configured
+[ ] Authorization reviewed
+[ ] Server-side validation
+[ ] Sensitive errors/logs reviewed
+
+QUALITY:
+[ ] Desktop responsive
+[ ] Tablet responsive
+[ ] Mobile responsive
+[ ] Accessibility reviewed
+[ ] SEO reviewed
+[ ] Loading/error/empty states
+[ ] 404 handling
+[ ] No major console errors
+[ ] Lint passes
+[ ] Typecheck passes
+[ ] Tests pass where implemented
+[ ] Production build passes
+
+REPOSITORY:
+[ ] Meaningful commits
+[ ] Clean git history
+[ ] Correct .gitignore
+[ ] README updated
+[ ] No credentials committed
+
+Only after this checklist is reasonably complete should the project move
+to Docker and then AWS/Terraform.
+
+======================================================================
+END OF MASTER IMPLEMENTATION PLAN
+======================================================================

@@ -1,26 +1,92 @@
 @import "tailwindcss";
 
+/*
+ * EstateHub design tokens.
+ * Palette: deep navy / charcoal, warm off-white, gold accent, white cards.
+ * Everything in the UI should reference these tokens (bg-navy, text-gold-strong,
+ * bg-sand, ...) instead of raw hex values, so the theme can change in one place.
+ */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --navy: #0b1b2e;
+  --navy-soft: #14293f;
+  --charcoal: #1f2933;
+  --ivory: #faf7f2;
+  --sand: #f1ebe0;
+  --gold: #c5a06a;
+  --gold-strong: #8a6a32; /* gold that passes 4.5:1 as text on ivory/white */
+  --line: #e6dfd2;
+  --stone: #5b6470; /* muted text, ~5.6:1 on ivory */
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-navy: var(--navy);
+  --color-navy-soft: var(--navy-soft);
+  --color-charcoal: var(--charcoal);
+  --color-ivory: var(--ivory);
+  --color-sand: var(--sand);
+  --color-gold: var(--gold);
+  --color-gold-strong: var(--gold-strong);
+  --color-line: var(--line);
+  --color-stone: var(--stone);
+
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-serif: var(--font-playfair), ui-serif, Georgia, serif;
+
+  --radius-card: 0.875rem;
+  --shadow-card: 0 1px 2px rgb(11 27 46 / 0.06), 0 8px 24px -12px rgb(11 27 46 / 0.18);
+  --shadow-lift: 0 2px 4px rgb(11 27 46 / 0.06), 0 18px 40px -16px rgb(11 27 46 / 0.28);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  scroll-behavior: smooth;
+  /* keeps anchored/focused content clear of the sticky navbar (WCAG 2.2 focus not obscured) */
+  scroll-padding-top: 5.5rem;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--ivory);
+  color: var(--charcoal);
+  font-family: var(--font-sans);
+  line-height: 1.6;
+  text-rendering: optimizeLegibility;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-serif);
+  color: var(--navy);
+  letter-spacing: -0.01em;
+  line-height: 1.15;
+}
+
+::selection {
+  background: var(--gold);
+  color: var(--navy);
+}
+
+/* One consistent, always-visible keyboard focus ring. */
+:focus-visible {
+  outline: 2px solid var(--gold-strong);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+/* On dark surfaces the darker gold ring is hard to see, so switch to light gold. */
+.on-dark :focus-visible {
+  outline-color: var(--gold);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
