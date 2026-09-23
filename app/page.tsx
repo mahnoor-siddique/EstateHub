@@ -1,20 +1,21 @@
-import { Container } from "@/components/ui/Container";
-import { SectionHeading } from "@/components/ui/SectionHeading";
-import { SITE } from "@/lib/site";
+import { CTA } from "@/components/home/CTA";
+import { FeaturedProperties } from "@/components/home/FeaturedProperties";
+import { Hero } from "@/components/home/Hero";
+import { PopularCities } from "@/components/home/PopularCities";
+import { PropertySearch } from "@/components/home/PropertySearch";
+import { Stats } from "@/components/home/Stats";
+import { WhyChooseUs } from "@/components/home/WhyChooseUs";
 
-/**
- * Phase 1 placeholder. The real homepage (cinematic hero, search, statistics,
- * featured properties, ...) is Phase 2 and will replace this file's contents.
- */
 export default function Home() {
   return (
-    <Container className="py-24 sm:py-32">
-      <SectionHeading
-        as="h1"
-        eyebrow="Foundation ready"
-        title={`Welcome to ${SITE.name}`}
-        description="The layout, theme, navigation and footer are in place. The homepage sections arrive in the next phase."
-      />
-    </Container>
+    <>
+      <Hero />
+      <PropertySearch />
+      <Stats />
+      <FeaturedProperties />
+      <PopularCities />
+      <WhyChooseUs />
+      <CTA />
+    </>
   );
 }
