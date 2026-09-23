@@ -1,7 +1,7 @@
 import type { PropertySummary } from "@/types/property";
 
 /*
- * TEMPORARY demonstration data for the Phase 2 homepage.
+ * TEMPORARY demonstration data for the homepage and the /properties listings.
  * These are fictional listings, not real properties. Phase 6 replaces them with Supabase data.
  */
 
@@ -18,6 +18,8 @@ export const DEMO_PROPERTIES: PropertySummary[] = [
     bathrooms: 6,
     area: 1,
     areaUnit: "Kanal",
+    amenities: ["Parking", "Garden", "Swimming Pool", "Security", "Backup Power"],
+    listedAt: "2026-09-02",
   },
   {
     id: "demo-clifton-apartment",
@@ -31,6 +33,8 @@ export const DEMO_PROPERTIES: PropertySummary[] = [
     bathrooms: 3,
     area: 2100,
     areaUnit: "sq ft",
+    amenities: ["Parking", "Security", "Gym", "Furnished", "Air Conditioning", "Backup Power"],
+    listedAt: "2026-09-18",
   },
   {
     id: "demo-bahria-rawalpindi-house",
@@ -44,6 +48,8 @@ export const DEMO_PROPERTIES: PropertySummary[] = [
     bathrooms: 5,
     area: 10,
     areaUnit: "Marla",
+    amenities: ["Parking", "Garden", "Security"],
+    listedAt: "2026-08-21",
   },
   {
     id: "demo-dha-islamabad-house",
@@ -57,6 +63,8 @@ export const DEMO_PROPERTIES: PropertySummary[] = [
     bathrooms: 7,
     area: 1,
     areaUnit: "Kanal",
+    amenities: ["Parking", "Garden", "Swimming Pool", "Security", "Gym", "Backup Power"],
+    listedAt: "2026-09-10",
   },
   {
     id: "demo-gulberg-penthouse",
@@ -70,6 +78,8 @@ export const DEMO_PROPERTIES: PropertySummary[] = [
     bathrooms: 4,
     area: 2800,
     areaUnit: "sq ft",
+    amenities: ["Parking", "Security", "Gym", "Air Conditioning", "Backup Power"],
+    listedAt: "2026-09-14",
   },
   {
     id: "demo-citi-faisalabad-house",
@@ -83,6 +93,8 @@ export const DEMO_PROPERTIES: PropertySummary[] = [
     bathrooms: 4,
     area: 10,
     areaUnit: "Marla",
+    amenities: ["Parking", "Garden", "Air Conditioning"],
+    listedAt: "2026-08-30",
   },
 ];
 

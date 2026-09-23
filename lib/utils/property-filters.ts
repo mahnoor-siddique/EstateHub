@@ -1,53 +1,108 @@
 import { CITIES } from "@/lib/site";
-import { PROPERTY_TYPES } from "@/types/property";
+import {
+  AMENITIES,
+  LISTING_TYPES,
+  PROPERTY_TYPES,
+  type Amenity,
+  type ListingType,
+  type PropertyType,
+} from "@/types/property";
 
 /*
- * URL search-param vocabulary for the property listings. The homepage search form and the
- * /properties filter bar both submit these names, so a search from either lands on the same URL.
+ * URL search params are the single source of truth for the /properties filters and sort order.
+ * The homepage search, the Popular Cities links and the /properties filter bar all use these names:
  *
- * Chunk 3A only reads them back to pre-fill the filter bar. Applying them to the results is a
- * later Phase 3 chunk.
+ *   city=Lahore  propertyType=House  listingType=For Rent  minPrice=5000000  maxPrice=90000000
+ *   bedrooms=3   bathrooms=2         amenities=Parking&amenities=Garden     sort=price-asc
+ *
+ * Anything unknown or malformed is ignored rather than causing an error.
  */
 
-export const LISTING_PARAM_OPTIONS = [
-  { value: "sale", label: "For Sale" },
-  { value: "rent", label: "For Rent" },
+export const SORT_OPTIONS = [
+  { value: "newest", label: "Newest" },
+  { value: "price-asc", label: "Price: low to high" },
+  { value: "price-desc", label: "Price: high to low" },
 ] as const;
 
-export type PropertyFilterValues = {
-  city: string;
-  type: string;
-  listing: string;
-  minPrice: string;
-  maxPrice: string;
+export type SortOption = (typeof SORT_OPTIONS)[number]["value"];
+export const DEFAULT_SORT: SortOption = "newest";
+
+/** "N or more" choices for the bedrooms / bathrooms selects. */
+export const ROOM_COUNT_OPTIONS = [1, 2, 3, 4, 5] as const;
+
+export type PropertyFilters = {
+  city?: (typeof CITIES)[number];
+  propertyType?: PropertyType;
+  listingType?: ListingType;
+  minPrice?: number;
+  maxPrice?: number;
+  bedrooms?: number; // minimum
+  bathrooms?: number; // minimum
+  amenities: Amenity[]; // a listing must have every selected amenity
+  sort: SortOption;
 };
 
 type RawSearchParams = Record<string, string | string[] | undefined>;
 
+function all(value: string | string[] | undefined): string[] {
+  return (Array.isArray(value) ? value : value === undefined ? [] : [value]).map((v) => v.trim());
+}
+
 function first(value: string | string[] | undefined): string {
-  return (Array.isArray(value) ? value[0] : value)?.trim() ?? "";
+  return all(value)[0] ?? "";
 }
 
-/** Keeps a value only if it is one of the allowed options (case-insensitive), normalised to its canonical form. */
-function oneOf(value: string, allowed: readonly string[]): string {
-  return allowed.find((option) => option.toLowerCase() === value.toLowerCase()) ?? "";
+/** Matches one of the allowed options case-insensitively and returns its canonical spelling. */
+function oneOf<T extends string>(value: string, allowed: readonly T[]): T | undefined {
+  const lower = value.toLowerCase();
+  return allowed.find((option) => option.toLowerCase() === lower);
 }
 
-function wholeNumber(value: string): string {
-  return /^\d{1,12}$/.test(value) ? String(Number(value)) : "";
+function wholeNumber(value: string, max = 1e12): number | undefined {
+  if (!/^\d{1,13}$/.test(value)) return undefined;
+  const n = Number(value);
+  return n <= max ? n : undefined;
 }
 
-/** Reads and sanitises the filter params. Unknown or malformed values fall back to "" (no filter). */
-export function readFilterValues(params: RawSearchParams): PropertyFilterValues {
+export function parsePropertyFilters(params: RawSearchParams): PropertyFilters {
+  const amenities = all(params.amenities)
+    .map((a) => oneOf(a, AMENITIES))
+    .filter((a): a is Amenity => a !== undefined);
+
   return {
     city: oneOf(first(params.city), CITIES),
-    type: oneOf(first(params.type), PROPERTY_TYPES),
-    listing: oneOf(first(params.listing), LISTING_PARAM_OPTIONS.map((o) => o.value)),
+    propertyType: oneOf(first(params.propertyType), PROPERTY_TYPES),
+    listingType: oneOf(first(params.listingType), LISTING_TYPES),
     minPrice: wholeNumber(first(params.minPrice)),
     maxPrice: wholeNumber(first(params.maxPrice)),
+    bedrooms: wholeNumber(first(params.bedrooms), 20),
+    bathrooms: wholeNumber(first(params.bathrooms), 20),
+    amenities: [...new Set(amenities)],
+    sort: oneOf(first(params.sort), SORT_OPTIONS.map((o) => o.value)) ?? DEFAULT_SORT,
   };
 }
 
-export function hasActiveFilters(values: PropertyFilterValues): boolean {
-  return Object.values(values).some(Boolean);
+/** Number of active filters (sort order is not a filter). */
+export function countActiveFilters(filters: PropertyFilters): number {
+  const { city, propertyType, listingType, minPrice, maxPrice, bedrooms, bathrooms, amenities } = filters;
+  const single = [city, propertyType, listingType, minPrice, maxPrice, bedrooms, bathrooms];
+  return single.filter((v) => v !== undefined && v !== 0).length + amenities.length;
+}
+
+/** Serialises filters back to a query string, omitting empty values and the default sort. */
+export function toSearchParams(filters: Partial<PropertyFilters>): URLSearchParams {
+  const params = new URLSearchParams();
+  for (const [key, value] of Object.entries(filters)) {
+    if (key === "sort" && value === DEFAULT_SORT) continue;
+    for (const v of Array.isArray(value) ? value : [value]) {
+      if (v !== undefined) params.append(key, String(v));
+    }
+  }
+  return params;
+}
+
+/** /properties link that clears every filter but keeps the chosen sort order. */
+export function clearFiltersHref(filters: PropertyFilters): string {
+  const query = toSearchParams({ sort: filters.sort }).toString();
+  return query ? `/properties?${query}` : "/properties";
 }

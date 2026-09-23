@@ -3,18 +3,13 @@ import { Container } from "@/components/ui/Container";
 import { Field, PriceInput, Select } from "@/components/ui/form";
 import { SearchIcon } from "@/components/ui/icons";
 import { CITIES } from "@/lib/site";
-import { PROPERTY_TYPES } from "@/types/property";
-
-const LISTING_OPTIONS = [
-  { value: "sale", label: "For Sale" },
-  { value: "rent", label: "For Rent" },
-] as const;
+import { LISTING_TYPES, PROPERTY_TYPES } from "@/types/property";
 
 /**
  * Homepage search panel, overlapping the bottom of the hero.
- * UI only for now: it is a plain GET form, so no client JavaScript is needed. Its field names
- * (city, type, listing, minPrice, maxPrice, bedrooms) are the URL params the Phase 3 listings
- * page will read. Nothing is filtered or fetched yet.
+ * A plain GET form to /properties, so no client JavaScript is needed. Its field names
+ * (city, propertyType, listingType, minPrice, maxPrice, bedrooms) are the same URL params the
+ * listings page filters by (see lib/utils/property-filters.ts).
  */
 export function PropertySearch() {
   return (
@@ -34,13 +29,13 @@ export function PropertySearch() {
           <fieldset className="mb-5">
             <legend className="sr-only">Listing type</legend>
             <div className="inline-flex rounded-full bg-sand p-1">
-              {LISTING_OPTIONS.map(({ value, label }) => (
-                <label key={value} className="cursor-pointer">
+              {LISTING_TYPES.map((label) => (
+                <label key={label} className="cursor-pointer">
                   <input
                     type="radio"
-                    name="listing"
-                    value={value}
-                    defaultChecked={value === "sale"}
+                    name="listingType"
+                    value={label}
+                    defaultChecked={label === "For Sale"}
                     className="peer sr-only"
                   />
                   <span className="inline-flex min-h-11 items-center rounded-full px-6 text-sm font-medium text-charcoal transition-colors peer-checked:bg-navy peer-checked:text-white peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-gold-strong">
@@ -64,7 +59,7 @@ export function PropertySearch() {
             </Field>
 
             <Field label="Property type" htmlFor="search-type">
-              <Select id="search-type" name="type">
+              <Select id="search-type" name="propertyType">
                 <option value="">Any type</option>
                 {PROPERTY_TYPES.map((type) => (
                   <option key={type} value={type}>
