@@ -1,45 +1,9 @@
-import type { ReactNode } from "react";
 import { Button } from "@/components/ui/Button";
 import { Container } from "@/components/ui/Container";
-import { ChevronDownIcon, SearchIcon } from "@/components/ui/icons";
+import { Field, PriceInput, Select } from "@/components/ui/form";
+import { SearchIcon } from "@/components/ui/icons";
 import { CITIES } from "@/lib/site";
 import { PROPERTY_TYPES } from "@/types/property";
-
-const fieldClass =
-  "h-12 w-full rounded-lg border border-line bg-ivory px-3 text-sm text-charcoal placeholder:text-stone/80 transition-colors hover:border-gold focus-visible:border-gold-strong";
-
-function Field({ label, htmlFor, children }: { label: string; htmlFor: string; children: ReactNode }) {
-  return (
-    <div>
-      <label
-        htmlFor={htmlFor}
-        className="mb-1.5 block text-xs font-semibold tracking-wide text-navy uppercase"
-      >
-        {label}
-      </label>
-      {children}
-    </div>
-  );
-}
-
-function Select({
-  id,
-  name,
-  children,
-}: {
-  id: string;
-  name: string;
-  children: ReactNode;
-}) {
-  return (
-    <div className="relative">
-      <select id={id} name={name} defaultValue="" className={`${fieldClass} cursor-pointer appearance-none pr-9`}>
-        {children}
-      </select>
-      <ChevronDownIcon className="pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2 text-stone" />
-    </div>
-  );
-}
 
 const LISTING_OPTIONS = [
   { value: "sale", label: "For Sale" },
@@ -111,29 +75,11 @@ export function PropertySearch() {
             </Field>
 
             <Field label="Min price (PKR)" htmlFor="search-min">
-              <input
-                id="search-min"
-                name="minPrice"
-                type="text"
-                inputMode="numeric"
-                pattern="[0-9]*"
-                placeholder="No minimum"
-                autoComplete="off"
-                className={fieldClass}
-              />
+              <PriceInput id="search-min" name="minPrice" placeholder="No minimum" />
             </Field>
 
             <Field label="Max price (PKR)" htmlFor="search-max">
-              <input
-                id="search-max"
-                name="maxPrice"
-                type="text"
-                inputMode="numeric"
-                pattern="[0-9]*"
-                placeholder="No maximum"
-                autoComplete="off"
-                className={fieldClass}
-              />
+              <PriceInput id="search-max" name="maxPrice" placeholder="No maximum" />
             </Field>
 
             <Field label="Bedrooms" htmlFor="search-beds">
