@@ -140,6 +140,38 @@ export const DEMO_PROPERTIES: PropertyDetail[] = [
     yearBuilt: 2020,
     parkingSpaces: 4,
     agentId: "demo-agent-sara",
+    images: [
+      {
+        src: "/images/properties/property-2/main.png",
+        alt: "Front of the executive residence at sunset, with a lit entrance, gated driveway and hills behind",
+        label: "Executive Residence exterior",
+      },
+      {
+        src: "/images/properties/property-2/living-room.png",
+        alt: "Open-plan living room with a sectional sofa, ring chandelier and glass doors to the pool and hills",
+        label: "Luxury living room",
+      },
+      {
+        src: "/images/properties/property-2/master-bedroom.png",
+        alt: "Master bedroom with an upholstered bed and a private balcony overlooking the hills",
+        label: "Master bedroom",
+      },
+      {
+        src: "/images/properties/property-2/kitchen.png",
+        alt: "Kitchen with a marble waterfall island, four bar stools and glass pendant lights",
+        label: "Modern luxury kitchen",
+      },
+      {
+        src: "/images/properties/property-2/bathroom.png",
+        alt: "Master bathroom with a freestanding tub beneath a large window, glass shower and double vanity",
+        label: "Luxury master bathroom",
+      },
+      {
+        src: "/images/properties/property-2/garden-pool.png",
+        alt: "Back garden with a swimming pool, waterfall feature, outdoor lounge and a view of the hills at sunset",
+        label: "Garden & swimming pool",
+      },
+    ],
   },
   {
     id: "demo-gulberg-penthouse",
