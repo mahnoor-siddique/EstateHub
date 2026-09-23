@@ -51,13 +51,20 @@ body {
   text-rendering: optimizeLegibility;
 }
 
-h1,
-h2,
-h3 {
-  font-family: var(--font-serif);
-  color: var(--navy);
-  letter-spacing: -0.01em;
-  line-height: 1.15;
+/*
+ * Base heading style. It lives in @layer base so Tailwind utilities (text-white,
+ * text-gold, font-sans, ...) can override it on dark sections; unlayered element
+ * rules would always win over utilities.
+ */
+@layer base {
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-serif);
+    color: var(--navy);
+    letter-spacing: -0.01em;
+    line-height: 1.15;
+  }
 }
 
 ::selection {
@@ -69,7 +76,6 @@ h3 {
 :focus-visible {
   outline: 2px solid var(--gold-strong);
   outline-offset: 3px;
-  border-radius: 4px;
 }
 
 /* On dark surfaces the darker gold ring is hard to see, so switch to light gold. */
