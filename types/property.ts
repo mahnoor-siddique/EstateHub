@@ -18,6 +18,13 @@ export type PropertyType = (typeof PROPERTY_TYPES)[number];
 export type ListingType = (typeof LISTING_TYPES)[number];
 export type Amenity = (typeof AMENITIES)[number];
 
+/** One listing photo. `src` is a path under /public for now; Phase 9 moves photos to storage. */
+export type PropertyPhoto = {
+  src: string;
+  alt: string; // describes what is in the photo, for screen readers
+  label: string; // short caption, e.g. "Kitchen"
+};
+
 /** Card-level property data. Phase 6 will fill this from Supabase instead of demo data. */
 export type PropertySummary = {
   id: string;
@@ -33,6 +40,15 @@ export type PropertySummary = {
   areaUnit: "Marla" | "Kanal" | "sq ft";
   amenities: Amenity[];
   listedAt: string; // ISO date the listing went live; drives "Newest" sorting
-  imageUrl?: string; // optional real image; a designed placeholder is used when absent
-  imageAlt?: string;
+  /** Ordered photos (mirrors the planned property_images table). The first one is the cover used on
+   *  cards. When empty or absent, the designed placeholder for the property type is shown instead. */
+  images?: PropertyPhoto[];
+};
+
+/** Full listing data for the details page. Mirrors the planned Supabase `properties` columns. */
+export type PropertyDetail = PropertySummary & {
+  description: string;
+  yearBuilt?: number;
+  parkingSpaces: number;
+  agentId: string;
 };

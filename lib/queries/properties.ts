@@ -1,10 +1,11 @@
-import { DEMO_PROPERTIES } from "@/lib/data/demo";
+import { DEMO_AGENTS, DEMO_PROPERTIES } from "@/lib/data/demo";
 import type { PropertyFilters, SortOption } from "@/lib/utils/property-filters";
-import type { PropertySummary } from "@/types/property";
+import type { Agent } from "@/types/agent";
+import type { PropertyDetail, PropertySummary } from "@/types/property";
 
 /*
  * Property data access. It filters the local demo listings for now. Phase 6 replaces the body of
- * getProperties with a Supabase query using the same filters, so pages and components stay unchanged.
+ * these functions with Supabase queries using the same filters, so pages and components stay unchanged.
  */
 
 function matches(property: PropertySummary, filters: PropertyFilters): boolean {
@@ -36,4 +37,18 @@ export async function getProperties(filters: PropertyFilters): Promise<PropertyR
     (a, b) => COMPARATORS[filters.sort](a, b) || a.id.localeCompare(b.id), // stable tie-break
   );
   return { properties, total: DEMO_PROPERTIES.length };
+}
+
+/** A single listing by id, or null when it does not exist. */
+export async function getPropertyById(id: string): Promise<PropertyDetail | null> {
+  return DEMO_PROPERTIES.find((p) => p.id === id) ?? null;
+}
+
+/** Ids of every listing, used to pre-render the details pages at build time. */
+export async function getPropertyIds(): Promise<string[]> {
+  return DEMO_PROPERTIES.map((p) => p.id);
+}
+
+export async function getAgentById(id: string): Promise<Agent | null> {
+  return DEMO_AGENTS.find((a) => a.id === id) ?? null;
 }

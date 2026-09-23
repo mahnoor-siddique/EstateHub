@@ -1,11 +1,34 @@
-import type { PropertySummary } from "@/types/property";
+import type { Agent } from "@/types/agent";
+import type { PropertyDetail } from "@/types/property";
 
 /*
  * TEMPORARY demonstration data for the homepage and the /properties listings.
  * These are fictional listings, not real properties. Phase 6 replaces them with Supabase data.
  */
 
-export const DEMO_PROPERTIES: PropertySummary[] = [
+/** Fictional sample agents and agencies. Not real people or businesses. */
+export const DEMO_AGENTS: Agent[] = [
+  {
+    id: "demo-agent-sara",
+    fullName: "Sara Malik",
+    agencyName: "Northgate Realty (Sample)",
+    title: "Senior Property Consultant",
+  },
+  {
+    id: "demo-agent-hamza",
+    fullName: "Hamza Qureshi",
+    agencyName: "Harbourline Estates (Sample)",
+    title: "Residential Sales Advisor",
+  },
+  {
+    id: "demo-agent-ayesha",
+    fullName: "Ayesha Rehman",
+    agencyName: "Greenfield Property Group (Sample)",
+    title: "Lettings & Sales Specialist",
+  },
+];
+
+export const DEMO_PROPERTIES: PropertyDetail[] = [
   {
     id: "demo-dha-lahore-villa",
     title: "Modern Villa with Landscaped Garden",
@@ -20,6 +43,43 @@ export const DEMO_PROPERTIES: PropertySummary[] = [
     areaUnit: "Kanal",
     amenities: ["Parking", "Garden", "Swimming Pool", "Security", "Backup Power"],
     listedAt: "2026-09-02",
+    description:
+      "A contemporary one-kanal villa set behind a landscaped front garden in a quiet DHA Phase 6 street. Double-height living spaces open onto a private pool deck, the kitchen is fitted with stone counters and a separate prep area, and every bedroom has its own bathroom. Solar-backed power, a gated driveway and staff quarters complete a home designed for everyday comfort and easy entertaining.",
+    yearBuilt: 2021,
+    parkingSpaces: 3,
+    agentId: "demo-agent-sara",
+    images: [
+      {
+        src: "/images/properties/property-1/main.png",
+        alt: "Front of the modern villa at dusk, with a landscaped lawn, lit entrance and gated driveway",
+        label: "Exterior",
+      },
+      {
+        src: "/images/properties/property-1/living-room.png",
+        alt: "Living room with a large sectional sofa, marble feature wall and glass doors to the garden",
+        label: "Living room",
+      },
+      {
+        src: "/images/properties/property-1/master-bedroom.png",
+        alt: "Master bedroom with an upholstered bed and sliding doors opening onto the pool garden",
+        label: "Master bedroom",
+      },
+      {
+        src: "/images/properties/property-1/kitchen.png",
+        alt: "Kitchen with a marble waterfall island, bar stools and glass pendant lights",
+        label: "Kitchen",
+      },
+      {
+        src: "/images/properties/property-1/bathroom.png",
+        alt: "Master bathroom with a freestanding tub, glass walk-in shower and marble double vanity",
+        label: "Luxury master bathroom",
+      },
+      {
+        src: "/images/properties/property-1/garden-pool.png",
+        alt: "Back garden with a swimming pool, water feature and outdoor lounge seating",
+        label: "Garden & pool",
+      },
+    ],
   },
   {
     id: "demo-clifton-apartment",
@@ -35,6 +95,11 @@ export const DEMO_PROPERTIES: PropertySummary[] = [
     areaUnit: "sq ft",
     amenities: ["Parking", "Security", "Gym", "Furnished", "Air Conditioning", "Backup Power"],
     listedAt: "2026-09-18",
+    description:
+      "A bright three-bedroom apartment on a high floor in Clifton Block 5, with wide windows framing the sea. The unit is fully furnished and air-conditioned, and residents share a gym, round-the-clock security and backup power. Two covered parking spaces and quick access to Clifton's cafés and schools make it an easy long-term rental.",
+    yearBuilt: 2019,
+    parkingSpaces: 2,
+    agentId: "demo-agent-hamza",
   },
   {
     id: "demo-bahria-rawalpindi-house",
@@ -50,6 +115,11 @@ export const DEMO_PROPERTIES: PropertySummary[] = [
     areaUnit: "Marla",
     amenities: ["Parking", "Garden", "Security"],
     listedAt: "2026-08-21",
+    description:
+      "A newly built ten-marla family home in Bahria Town Phase 8, finished in warm, neutral tones. The ground floor combines a drawing room, open-plan lounge and kitchen, with four bedrooms arranged across two floors. A small lawn, gated parking and the society's security and amenities make it a practical, move-in-ready choice.",
+    yearBuilt: 2022,
+    parkingSpaces: 2,
+    agentId: "demo-agent-ayesha",
   },
   {
     id: "demo-dha-islamabad-house",
@@ -65,6 +135,11 @@ export const DEMO_PROPERTIES: PropertySummary[] = [
     areaUnit: "Kanal",
     amenities: ["Parking", "Garden", "Swimming Pool", "Security", "Gym", "Backup Power"],
     listedAt: "2026-09-10",
+    description:
+      "An executive six-bedroom residence in DHA Phase 2 with open views towards the Margalla foothills. Generous reception rooms, a home gym and a heated pool sit alongside a mature garden and a basement suited to a home office or media room. Built for large families who want space, privacy and quality finishes.",
+    yearBuilt: 2020,
+    parkingSpaces: 4,
+    agentId: "demo-agent-sara",
   },
   {
     id: "demo-gulberg-penthouse",
@@ -80,6 +155,11 @@ export const DEMO_PROPERTIES: PropertySummary[] = [
     areaUnit: "sq ft",
     amenities: ["Parking", "Security", "Gym", "Air Conditioning", "Backup Power"],
     listedAt: "2026-09-14",
+    description:
+      "A three-bedroom penthouse in the heart of Gulberg III, topped by a private terrace with skyline views. Floor-to-ceiling glazing fills the living areas with light, and the building provides a gym, secure parking and backup power. Ideal for buyers who want city-centre convenience without giving up outdoor space.",
+    yearBuilt: 2018,
+    parkingSpaces: 2,
+    agentId: "demo-agent-hamza",
   },
   {
     id: "demo-citi-faisalabad-house",
@@ -95,6 +175,11 @@ export const DEMO_PROPERTIES: PropertySummary[] = [
     areaUnit: "Marla",
     amenities: ["Parking", "Garden", "Air Conditioning"],
     listedAt: "2026-08-30",
+    description:
+      "A well-kept corner house in Citi Housing with extra light and ventilation from two open sides. Four bedrooms, a family lounge, a fitted kitchen and a small garden are ready for a family to move straight in. Air conditioning is installed in the main rooms, and there is secure parking for two cars.",
+    yearBuilt: 2017,
+    parkingSpaces: 2,
+    agentId: "demo-agent-ayesha",
   },
 ];
 

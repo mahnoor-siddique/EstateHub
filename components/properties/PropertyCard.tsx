@@ -1,17 +1,11 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { AreaIcon, BathIcon, BedIcon, ArrowRightIcon, PinIcon } from "@/components/ui/icons";
-import { PlaceholderImage, type Scene, type Tone } from "@/components/ui/PlaceholderImage";
+import type { Tone } from "@/components/ui/PlaceholderImage";
 import { cn } from "@/lib/utils/cn";
 import { formatPrice } from "@/lib/utils/format";
-import type { PropertySummary, PropertyType } from "@/types/property";
-
-const SCENE_BY_TYPE: Record<PropertyType, Scene> = {
-  House: "house",
-  Villa: "villa",
-  Apartment: "apartment",
-  Commercial: "commercial",
-};
+import type { PropertySummary } from "@/types/property";
+import { PropertyImage } from "./PropertyImage";
 
 function Fact({ icon, label, children }: { icon: ReactNode; label: string; children: ReactNode }) {
   return (
@@ -36,11 +30,9 @@ export function PropertyCard({ property, tone = "dusk" }: { property: PropertySu
     <article className="group relative flex w-full flex-col overflow-hidden rounded-card border border-line bg-white shadow-card transition-[box-shadow,translate] duration-300 hover:-translate-y-1 hover:shadow-lift has-[a:focus-visible]:outline-2 has-[a:focus-visible]:outline-offset-2 has-[a:focus-visible]:outline-gold-strong motion-reduce:hover:translate-y-0">
       <div className="relative aspect-[4/3] overflow-hidden bg-sand">
         <div className="absolute inset-0 transition-transform duration-500 group-hover:scale-105 motion-reduce:transition-none motion-reduce:group-hover:scale-100">
-          <PlaceholderImage
-            scene={SCENE_BY_TYPE[propertyType]}
+          <PropertyImage
+            property={property}
             tone={tone}
-            src={property.imageUrl}
-            alt={property.imageAlt ?? `${title} in ${location}, ${city}`}
             sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
           />
         </div>
