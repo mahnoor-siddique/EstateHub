@@ -264,7 +264,7 @@ export const DEMO_PROPERTIES: PropertyDetail[] = [
     listingType: "For Rent",
     price: 150_000,
     city: "Faisalabad",
-    location: "Citi Housing",
+    location: "Canal Road",
     bedrooms: 4,
     bathrooms: 4,
     area: 10,
@@ -272,10 +272,42 @@ export const DEMO_PROPERTIES: PropertyDetail[] = [
     amenities: ["Parking", "Garden", "Air Conditioning"],
     listedAt: "2026-08-30",
     description:
-      "A well-kept corner house in Citi Housing with extra light and ventilation from two open sides. Four bedrooms, a family lounge, a fitted kitchen and a small garden are ready for a family to move straight in. Air conditioning is installed in the main rooms, and there is secure parking for two cars.",
+      "A well-kept corner house off Canal Road with extra light and ventilation from two open sides. Four bedrooms, a family lounge, a fitted kitchen and a small garden are ready for a family to move straight in. Air conditioning is installed in the main rooms, and there is secure parking for two cars.",
     yearBuilt: 2017,
     parkingSpaces: 2,
     agentId: "demo-agent-ayesha",
+    images: [
+      {
+        src: "/images/properties/property-5/main.jpg",
+        alt: "Modern two-storey house with a glass-railed balcony, seen through open gates across a paved driveway and lawn",
+        label: "Corner house exterior",
+      },
+      {
+        src: "/images/properties/property-5/living-room.jpg",
+        alt: "Living room with a grey sectional sofa, layered wooden coffee tables, pendant lights and a wood-slat feature wall",
+        label: "Family living room",
+      },
+      {
+        src: "/images/properties/property-5/bedroom.jpg",
+        alt: "Master bedroom with a white-covered bed, bedside lamps, a ceiling fan and two large windows",
+        label: "Master bedroom",
+      },
+      {
+        src: "/images/properties/property-5/kitchen.jpg",
+        alt: "Fitted kitchen with built-in oven and microwave, a steel fridge and a four-seat dining table",
+        label: "Fitted kitchen",
+      },
+      {
+        src: "/images/properties/property-5/bathroom.jpg",
+        alt: "Master bathroom with a marble-tiled glass shower, freestanding tub and wooden vanity",
+        label: "Master bathroom",
+      },
+      {
+        src: "/images/properties/property-5/terrace.jpg",
+        alt: "Timber deck terrace with an outdoor dining table under a pergola, beside the lawn",
+        label: "Garden & terrace",
+      },
+    ],
   },
 ];
 
