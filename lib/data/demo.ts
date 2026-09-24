@@ -224,6 +224,38 @@ export const DEMO_PROPERTIES: PropertyDetail[] = [
     yearBuilt: 2018,
     parkingSpaces: 2,
     agentId: "demo-agent-hamza",
+    images: [
+      {
+        src: "/images/properties/property-4/main.png",
+        alt: "Penthouse building at night with warm lighting, glass-railed upper terraces and the city skyline in the distance",
+        label: "Skyline Penthouse exterior",
+      },
+      {
+        src: "/images/properties/property-4/living-room.png",
+        alt: "Living room with a cream sectional sofa, ring chandelier, marble fireplace wall and glass doors to a city-view terrace",
+        label: "Luxury living room",
+      },
+      {
+        src: "/images/properties/property-4/master-bedroom.png",
+        alt: "Master bedroom with an upholstered bed and sliding glass doors opening onto a terrace overlooking the city at night",
+        label: "Master bedroom",
+      },
+      {
+        src: "/images/properties/property-4/kitchen.png",
+        alt: "Kitchen with a marble waterfall island, four bar stools, glass pendant lights and a dining area facing the skyline",
+        label: "Modern luxury kitchen",
+      },
+      {
+        src: "/images/properties/property-4/bathroom.png",
+        alt: "Master bathroom with a freestanding tub by a city-view window, glass shower and marble vanity",
+        label: "Luxury master bathroom",
+      },
+      {
+        src: "/images/properties/property-4/terrace.png",
+        alt: "Private terrace with lounge seating, an outdoor dining table and barbecue counter overlooking the city skyline at night",
+        label: "Private terrace",
+      },
+    ],
   },
   {
     id: "demo-citi-faisalabad-house",
