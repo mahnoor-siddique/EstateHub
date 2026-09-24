@@ -52,7 +52,6 @@ export function PopularCities() {
             </li>
           ))}
         </ul>
-        <p className="mt-6 text-sm text-stone">Property counts are sample figures for demonstration.</p>
       </Container>
     </section>
   );

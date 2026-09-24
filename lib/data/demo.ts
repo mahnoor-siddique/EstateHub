@@ -11,20 +11,23 @@ export const DEMO_AGENTS: Agent[] = [
   {
     id: "demo-agent-sara",
     fullName: "Sara Malik",
-    agencyName: "Northgate Realty (Sample)",
+    agencyName: "Northgate Realty",
     title: "Senior Property Consultant",
+    bio: "Sara advises buyers and sellers on premium family homes and villas in DHA Lahore and DHA Islamabad, with a focus on realistic valuations and smooth, well-documented transfers.",
   },
   {
     id: "demo-agent-hamza",
     fullName: "Hamza Qureshi",
-    agencyName: "Harbourline Estates (Sample)",
+    agencyName: "Harbourline Estates",
     title: "Residential Sales Advisor",
+    bio: "Hamza specialises in apartments and penthouses, from sea-facing homes in Clifton to high-rise living in Gulberg, helping clients compare buildings, amenities and long-term value.",
   },
   {
     id: "demo-agent-ayesha",
     fullName: "Ayesha Rehman",
-    agencyName: "Greenfield Property Group (Sample)",
+    agencyName: "Greenfield Property Group",
     title: "Lettings & Sales Specialist",
+    bio: "Ayesha handles family homes for sale and rent in Rawalpindi and Faisalabad, guiding first-time buyers and tenants through viewings, paperwork and move-in day.",
   },
 ];
 

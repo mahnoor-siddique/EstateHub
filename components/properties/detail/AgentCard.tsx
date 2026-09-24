@@ -58,10 +58,6 @@ export function AgentCard({ agent, propertyId }: { agent: Agent | null; property
           Contact Agent
         </ButtonLink>
       </div>
-
-      <p className="mt-4 text-xs leading-relaxed text-stone">
-        Sample listing and agent for demonstration only.
-      </p>
     </section>
   );
 }

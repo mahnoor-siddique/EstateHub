@@ -13,7 +13,7 @@ export function FeaturedProperties() {
           <SectionHeading
             eyebrow="Featured properties"
             title={<span id="featured-heading">Homes worth a closer look</span>}
-            description="A preview of the kind of properties you'll find on EstateHub. These are sample listings for demonstration only."
+            description="A preview of the kind of properties you'll find on EstateHub."
           />
           <ButtonLink href="/properties" variant="secondary" className="self-start sm:self-auto">
             View all properties

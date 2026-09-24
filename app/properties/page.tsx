@@ -37,7 +37,6 @@ export default async function PropertiesPage({ searchParams }: PageProps<"/prope
                   {count < total ? `${count} of ${total} properties` : `${count} ${count === 1 ? "property" : "properties"}`}
                 </span>
               </h2>
-              <p className="text-sm text-stone">Sample listings for demonstration only.</p>
             </div>
             <SortSelect key={formKey} formId={FILTER_FORM_ID} value={filters.sort} />
           </div>
