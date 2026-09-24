@@ -90,7 +90,7 @@ export const DEMO_PROPERTIES: PropertyDetail[] = [
     city: "Karachi",
     location: "Clifton Block 5",
     bedrooms: 3,
-    bathrooms: 3,
+    bathrooms: 4,
     area: 2100,
     areaUnit: "sq ft",
     amenities: ["Parking", "Security", "Gym", "Furnished", "Air Conditioning", "Backup Power"],
@@ -100,6 +100,38 @@ export const DEMO_PROPERTIES: PropertyDetail[] = [
     yearBuilt: 2019,
     parkingSpaces: 2,
     agentId: "demo-agent-hamza",
+    images: [
+      {
+        src: "/images/properties/property-3/main.png",
+        alt: "Seafront apartment tower with glass balconies, a gated landscaped entrance and the beach alongside",
+        label: "Sea-facing apartment exterior",
+      },
+      {
+        src: "/images/properties/property-3/living-room.png",
+        alt: "Living room with a cream sectional sofa, marble coffee table and floor-to-ceiling windows facing the sea",
+        label: "Sea-view living room",
+      },
+      {
+        src: "/images/properties/property-3/master-bedroom.png",
+        alt: "Master bedroom with an upholstered bed and sliding glass doors opening onto a sea-facing balcony",
+        label: "Master bedroom",
+      },
+      {
+        src: "/images/properties/property-3/kitchen.png",
+        alt: "Kitchen with a marble waterfall island, three bar stools, glass pendant lights and a view of the sea",
+        label: "Modern luxury kitchen",
+      },
+      {
+        src: "/images/properties/property-3/bathroom.png",
+        alt: "Master bathroom with a freestanding tub by a full-height window, glass shower and marble double vanity",
+        label: "Luxury master bathroom",
+      },
+      {
+        src: "/images/properties/property-3/balcony-sea-view.png",
+        alt: "Balcony with outdoor lounge seating and a glass railing overlooking the beach and coastline",
+        label: "Balcony & sea view",
+      },
+    ],
   },
   {
     id: "demo-bahria-rawalpindi-house",
