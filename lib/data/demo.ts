@@ -152,6 +152,38 @@ export const DEMO_PROPERTIES: PropertyDetail[] = [
     yearBuilt: 2022,
     parkingSpaces: 2,
     agentId: "demo-agent-ayesha",
+    images: [
+      {
+        src: "/images/properties/property-6/main.png",
+        alt: "Contemporary two-storey white house with a wood-panelled entrance, glass-railed balcony, covered carport and landscaped front lawn at dusk",
+        label: "Contemporary exterior",
+      },
+      {
+        src: "/images/properties/property-6/living-room.jpg",
+        alt: "Open-plan lounge with a grey sectional sofa, herringbone wood floor and track lighting, beside a white gloss kitchen",
+        label: "Open-plan lounge",
+      },
+      {
+        src: "/images/properties/property-6/master-bedroom.jpg",
+        alt: "Sunlit master bedroom with an upholstered headboard, wall-mounted TV and floor-to-ceiling white wardrobes",
+        label: "Master bedroom",
+      },
+      {
+        src: "/images/properties/property-6/kitchen.jpg",
+        alt: "Kitchen with a stone island and induction hob, wood-panelled backsplash and glass pendant lights, opening onto the lounge",
+        label: "Kitchen & island",
+      },
+      {
+        src: "/images/properties/property-6/bathroom.jpg",
+        alt: "Master bathroom with a freestanding tub, double vessel basins on a floating vanity, textured stone walls and a glass shower",
+        label: "Master bathroom",
+      },
+      {
+        src: "/images/properties/property-6/terrace.jpg",
+        alt: "White arched veranda with an outdoor wooden table and potted plants, looking out over the garden lawn",
+        label: "Garden & veranda",
+      },
+    ],
   },
   {
     id: "demo-dha-islamabad-house",
