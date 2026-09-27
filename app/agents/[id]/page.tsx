@@ -1,29 +1,31 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import type { ReactNode } from "react";
+import { cache, type ReactNode } from "react";
 import { AgentAvatar } from "@/components/agents/AgentAvatar";
 import { PropertyGrid } from "@/components/properties/PropertyGrid";
 import { ButtonLink } from "@/components/ui/Button";
 import { Container } from "@/components/ui/Container";
 import { ArrowLeftIcon, CheckIcon, HomeIcon, PinIcon } from "@/components/ui/icons";
-import { getAgentIds, getAgentSummaryById, getPropertiesByAgent } from "@/lib/queries/agents";
+import { getAgentById, getPropertiesByAgent } from "@/lib/queries/supabase/agents";
 
-// Pre-render every known agent at build time. Unknown ids are still rendered on request (which
-// is what Supabase-backed ids will need) and fall through to notFound() below.
-export async function generateStaticParams() {
-  return (await getAgentIds()).map((id) => ({ id }));
-}
+// Agents and their listings come from Supabase, so each request renders fresh data rather than a
+// build-time snapshot. cache() shares one agent lookup between generateMetadata and the page.
+// Non-uuid ids and unknown uuids both resolve to null and fall through to notFound() below.
+const loadAgent = cache(getAgentById);
 
 export async function generateMetadata({ params }: PageProps<"/agents/[id]">): Promise<Metadata> {
-  const agent = await getAgentSummaryById((await params).id);
+  const agent = await loadAgent((await params).id);
   if (!agent) return { title: "Agent not found" };
 
-  const title = `${agent.fullName}, ${agent.title}`;
+  // title, bio and agency are optional in the database, so fall back rather than leave gaps.
+  const title = agent.title ? `${agent.fullName}, ${agent.title}` : agent.fullName;
+  const description =
+    agent.bio || `${agent.fullName}${agent.agencyName ? ` of ${agent.agencyName}` : ""} on EstateHub.`;
   return {
     title,
-    description: agent.bio,
-    openGraph: { title, description: agent.bio, type: "profile" },
+    description,
+    openGraph: { title, description, type: "profile" },
   };
 }
 
@@ -42,11 +44,13 @@ function Stat({ icon, label, value }: { icon: ReactNode; label: string; value: R
 }
 
 export default async function AgentProfilePage({ params }: PageProps<"/agents/[id]">) {
-  const agent = await getAgentSummaryById((await params).id);
+  const { id } = await params;
+  // Both lookups key on the same id, so run them together; an invalid id yields null and [].
+  const [agent, properties] = await Promise.all([loadAgent(id), getPropertiesByAgent(id)]);
   if (!agent) notFound();
 
-  const properties = await getPropertiesByAgent(agent.id);
-  const { fullName, title, agencyName, bio, listingCount } = agent;
+  const { fullName, title, agencyName, bio } = agent;
+  const listingCount = properties.length;
   const firstName = fullName.split(/\s+/)[0];
 
   // Every figure below is derived from the agent's own listings; nothing is made up.
