@@ -3,6 +3,9 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import { SignOutButton } from "@/components/auth/SignOutButton";
+import { UserBadge } from "@/components/auth/UserBadge";
+import type { SessionUser } from "@/lib/auth/types";
 import { AUTH_LINKS, NAV_LINKS } from "@/lib/site";
 import { cn } from "@/lib/utils/cn";
 import { ButtonLink } from "@/components/ui/Button";
@@ -18,12 +21,14 @@ function isActive(pathname: string, href: string) {
 
 /**
  * Sticky site navigation.
- * - lg and up: inline links + Login / Get Started.
+ * - lg and up: inline links + Login / Get Started, or the user's name + Sign out when signed in.
  * - below lg (tablet + mobile): logo + hamburger that opens a full-width panel.
  *
- * It is a client component only because of the menu toggle and active-link highlighting.
+ * `user` comes from the root layout, which reads the verified session on the server, so the
+ * correct state is in the first HTML (no signed-out flash). It is a client component only because
+ * of the menu toggle and active-link highlighting.
  */
-export function Navbar() {
+export function Navbar({ user }: { user: SessionUser | null }) {
   const pathname = usePathname();
   // Remember *which page* the menu was opened on. The menu counts as open only while we
   // are still on that page, so navigating anywhere closes it without an effect.
@@ -73,12 +78,19 @@ export function Navbar() {
           </ul>
         </nav>
 
-        <div className="hidden items-center gap-2 lg:flex">
-          <ButtonLink href={AUTH_LINKS.login.href} variant="ghost">
-            {AUTH_LINKS.login.label}
-          </ButtonLink>
-          <ButtonLink href={AUTH_LINKS.signup.href}>{AUTH_LINKS.signup.label}</ButtonLink>
-        </div>
+        {user ? (
+          <div className="hidden items-center gap-4 lg:flex">
+            <UserBadge user={user} compact />
+            <SignOutButton errorPlacement="popover" />
+          </div>
+        ) : (
+          <div className="hidden items-center gap-2 lg:flex">
+            <ButtonLink href={AUTH_LINKS.login.href} variant="ghost">
+              {AUTH_LINKS.login.label}
+            </ButtonLink>
+            <ButtonLink href={AUTH_LINKS.signup.href}>{AUTH_LINKS.signup.label}</ButtonLink>
+          </div>
+        )}
 
         <button
           ref={toggleRef}
@@ -122,18 +134,25 @@ export function Navbar() {
               })}
             </ul>
           </nav>
-          <div className="mt-5 grid grid-cols-2 gap-3 pb-2">
-            <ButtonLink
-              href={AUTH_LINKS.login.href}
-              variant="secondary"
-              onClick={() => setOpenedOn(null)}
-            >
-              {AUTH_LINKS.login.label}
-            </ButtonLink>
-            <ButtonLink href={AUTH_LINKS.signup.href} onClick={() => setOpenedOn(null)}>
-              {AUTH_LINKS.signup.label}
-            </ButtonLink>
-          </div>
+          {user ? (
+            <div className="mt-5 space-y-4 mb-2 rounded-card border border-line bg-white p-4 sm:flex sm:items-center sm:justify-between sm:gap-4 sm:space-y-0">
+              <UserBadge user={user} />
+              <SignOutButton className="sm:w-40 sm:shrink-0" />
+            </div>
+          ) : (
+            <div className="mt-5 grid grid-cols-2 gap-3 pb-2">
+              <ButtonLink
+                href={AUTH_LINKS.login.href}
+                variant="secondary"
+                onClick={() => setOpenedOn(null)}
+              >
+                {AUTH_LINKS.login.label}
+              </ButtonLink>
+              <ButtonLink href={AUTH_LINKS.signup.href} onClick={() => setOpenedOn(null)}>
+                {AUTH_LINKS.signup.label}
+              </ButtonLink>
+            </div>
+          )}
         </Container>
       </div>
     </header>

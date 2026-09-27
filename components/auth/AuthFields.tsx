@@ -2,7 +2,7 @@
 
 import { useState, type ComponentPropsWithoutRef, type ReactNode } from "react";
 import { fieldClass } from "@/components/ui/form";
-import { AlertIcon, EyeIcon, EyeOffIcon } from "@/components/ui/icons";
+import { AlertIcon, CheckIcon, EyeIcon, EyeOffIcon } from "@/components/ui/icons";
 import { cn } from "@/lib/utils/cn";
 
 type InputProps = Omit<ComponentPropsWithoutRef<"input">, "id" | "name"> & {
@@ -65,15 +65,31 @@ export function PasswordField({ label, name, error, hint, className, ...props }:
   );
 }
 
-/** Form-level error banner (e.g. "Incorrect email or password."). */
-export function FormAlert({ message }: { message?: string }) {
+/**
+ * Form-level banner: an error (e.g. "Incorrect email or password.") by default, or a
+ * `tone="success"` notice (e.g. "Email confirmed").
+ */
+export function FormAlert({
+  message,
+  tone = "error",
+}: {
+  message?: string;
+  tone?: "error" | "success";
+}) {
   if (!message) return null;
+  const success = tone === "success";
+  const Icon = success ? CheckIcon : AlertIcon;
   return (
     <div
-      role="alert"
-      className="mb-5 flex items-start gap-3 rounded-lg border border-danger/30 bg-danger/5 px-4 py-3 text-sm text-danger"
+      role={success ? "status" : "alert"}
+      className={cn(
+        "mb-5 flex items-start gap-3 rounded-lg border px-4 py-3 text-sm",
+        success
+          ? "border-gold/50 bg-sand/60 text-navy"
+          : "border-danger/30 bg-danger/5 text-danger",
+      )}
     >
-      <AlertIcon className="mt-0.5 size-5 shrink-0" />
+      <Icon className={cn("mt-0.5 size-5 shrink-0", success && "text-gold-strong")} />
       <p>{message}</p>
     </div>
   );

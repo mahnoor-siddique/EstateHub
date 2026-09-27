@@ -4,15 +4,15 @@ import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { logAuthError, loginErrorMessage, signupErrorMessage } from "@/lib/auth/errors";
-import type { LoginFormState, SignupFormState } from "@/lib/auth/types";
+import type { LoginFormState, SignOutState, SignupFormState } from "@/lib/auth/types";
 import { createClient } from "@/lib/supabase/server";
 import { safeRedirectPath } from "@/lib/utils/safe-redirect";
 import { validateLogin, validateSignup } from "@/lib/validations/auth";
 
 /*
- * Server Actions behind the /login and /signup forms. They run only on the server, re-validate
- * every field, and use the per-request Supabase client, which stores the session in HTTP-only
- * cookies. Passwords are never returned to the browser or logged.
+ * Server Actions behind the /login and /signup forms and the navbar's Sign out button. They run
+ * only on the server, re-validate every field, and use the per-request Supabase client, which
+ * stores the session in HTTP-only cookies. Passwords are never returned to the browser or logged.
  */
 
 export async function logIn(_prev: LoginFormState, formData: FormData): Promise<LoginFormState> {
@@ -73,4 +73,25 @@ export async function signUp(_prev: SignupFormState, formData: FormData): Promis
   // Email confirmation enabled (the Supabase default). For privacy Supabase gives the same
   // response whether or not the address is already registered, so the message stays neutral.
   return { status: "success", email };
+}
+
+// Used with useActionState, which passes (prevState, formData); sign-out needs neither.
+export async function signOut(): Promise<SignOutState> {
+  const supabase = await createClient();
+  // "local" ends only this browser's session (and revokes its refresh token); the user stays
+  // signed in on their other devices.
+  const { error } = await supabase.auth.signOut({ scope: "local" });
+
+  if (error) {
+    logAuthError("sign out", error);
+    // If Supabase could not be reached to revoke the token, the client has usually still cleared
+    // the session cookies. Only report failure if this browser is actually still signed in.
+    const { data } = await supabase.auth.getClaims();
+    if (data?.claims) {
+      return { status: "error", message: "We couldn't sign you out. Please try again." };
+    }
+  }
+
+  revalidatePath("/", "layout");
+  redirect("/");
 }
