@@ -20,8 +20,8 @@ export async function createClient() {
         try {
           cookiesToSet.forEach(({ name, value, options }) => cookieStore.set(name, value, options));
         } catch {
-          // Server Components cannot write cookies. This is safe to ignore until auth (Phase 7)
-          // adds a proxy that refreshes sessions and writes the updated cookies.
+          // Server Components cannot write cookies. Safe to ignore: proxy.ts refreshes the
+          // session and writes the updated cookies before the page renders.
         }
       },
     },

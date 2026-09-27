@@ -16,6 +16,7 @@
   --gold-strong: #8a6a32; /* gold that passes 4.5:1 as text on ivory/white */
   --line: #e6dfd2;
   --stone: #5b6470; /* muted text, ~5.6:1 on ivory */
+  --danger: #b42318; /* error text/borders, ~6:1 on white */
 }
 
 @theme inline {
@@ -28,6 +29,7 @@
   --color-gold-strong: var(--gold-strong);
   --color-line: var(--line);
   --color-stone: var(--stone);
+  --color-danger: var(--danger);
 
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   --font-serif: var(--font-playfair), ui-serif, Georgia, serif;
