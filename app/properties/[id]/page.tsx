@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import type { ReactNode } from "react";
+import { cache, type ReactNode } from "react";
 import { Container } from "@/components/ui/Container";
 import { ArrowLeftIcon, PinIcon } from "@/components/ui/icons";
 import { AgentCard } from "@/components/properties/detail/AgentCard";
@@ -9,18 +9,17 @@ import { PropertyAmenities } from "@/components/properties/detail/PropertyAmenit
 import { PropertyInfo } from "@/components/properties/detail/PropertyInfo";
 import { PropertyKeyFacts } from "@/components/properties/detail/PropertyKeyFacts";
 import { PropertyMainImage } from "@/components/properties/detail/PropertyMainImage";
-import { getAgentById, getPropertyById, getPropertyIds } from "@/lib/queries/properties";
+import { getAgentById, getPropertyById } from "@/lib/queries/supabase/properties";
 import { cn } from "@/lib/utils/cn";
 import { formatPrice } from "@/lib/utils/format";
 
-// Pre-render every known listing at build time. Unknown ids are still rendered on request (which
-// is what Supabase-backed ids will need) and fall through to notFound() below.
-export async function generateStaticParams() {
-  return (await getPropertyIds()).map((id) => ({ id }));
-}
+// Listings come from Supabase and change (price, status, photos), so each request renders fresh data
+// rather than a build-time snapshot. cache() shares one lookup between generateMetadata and the page.
+// Non-uuid ids and unknown uuids both resolve to null and fall through to notFound() below.
+const loadProperty = cache(getPropertyById);
 
 export async function generateMetadata({ params }: PageProps<"/properties/[id]">): Promise<Metadata> {
-  const property = await getPropertyById((await params).id);
+  const property = await loadProperty((await params).id);
   if (!property) return { title: "Property not found" };
 
   const { title, listingType, propertyType, location, city, bedrooms, bathrooms } = property;
@@ -48,7 +47,7 @@ function Section({ id, title, children }: { id: string; title: string; children:
 }
 
 export default async function PropertyDetailsPage({ params }: PageProps<"/properties/[id]">) {
-  const property = await getPropertyById((await params).id);
+  const property = await loadProperty((await params).id);
   if (!property) notFound();
 
   const agent = await getAgentById(property.agentId);
@@ -121,9 +120,13 @@ export default async function PropertyDetailsPage({ params }: PageProps<"/proper
 
         <div className="flex min-w-0 flex-col gap-10 lg:col-start-1 lg:row-start-2">
           <Section id="description-heading" title="About this property">
-            <p className="max-w-3xl text-base leading-relaxed text-charcoal sm:text-lg">
-              {property.description}
-            </p>
+            {property.description ? (
+              <p className="max-w-3xl text-base leading-relaxed text-charcoal sm:text-lg">
+                {property.description}
+              </p>
+            ) : (
+              <p className="text-base text-stone">No description has been added for this property yet.</p>
+            )}
           </Section>
 
           <Section id="amenities-heading" title="Amenities">
