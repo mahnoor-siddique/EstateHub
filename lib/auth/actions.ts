@@ -12,7 +12,8 @@ import { validateLogin, validateSignup } from "@/lib/validations/auth";
 /*
  * Server Actions behind the /login and /signup forms and the navbar's Sign out button. They run
  * only on the server, re-validate every field, and use the per-request Supabase client, which
- * stores the session in HTTP-only cookies. Passwords are never returned to the browser or logged.
+ * stores the session in cookies (readable by the Supabase browser client, per @supabase/ssr).
+ * Passwords are never returned to the browser or logged.
  */
 
 export async function logIn(_prev: LoginFormState, formData: FormData): Promise<LoginFormState> {
