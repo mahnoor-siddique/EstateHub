@@ -1,5 +1,6 @@
 import { createBrowserClient } from "@supabase/ssr";
 import { getSupabaseEnv } from "@/lib/supabase/env";
+import type { Database } from "@/types/database";
 
 /*
  * Supabase client for Client Components ("use client"). createBrowserClient reuses a single
@@ -7,5 +8,5 @@ import { getSupabaseEnv } from "@/lib/supabase/env";
  */
 export function createClient() {
   const { url, publishableKey } = getSupabaseEnv();
-  return createBrowserClient(url, publishableKey);
+  return createBrowserClient<Database>(url, publishableKey);
 }
