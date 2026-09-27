@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
 import Image from "next/image";
+import { connection } from "next/server";
 import { AgentCard } from "@/components/agents/AgentCard";
+import { AgentEmptyState } from "@/components/agents/AgentEmptyState";
 import { Container } from "@/components/ui/Container";
 import { SectionHeading } from "@/components/ui/SectionHeading";
-import { getAgents } from "@/lib/queries/agents";
+import { getAgents } from "@/lib/queries/supabase/agents";
 import heroImage from "@/public/images/agents/agents-hero.png";
 
 export const metadata: Metadata = {
@@ -13,6 +15,8 @@ export const metadata: Metadata = {
 };
 
 export default async function AgentsPage() {
+  // Agents come from Supabase, so render on each request instead of freezing a build-time snapshot.
+  await connection();
   const agents = await getAgents();
   const count = agents.length;
 
@@ -58,14 +62,18 @@ export default async function AgentsPage() {
             </h2>
           </div>
 
-          {/* 1 column on phones, 2 on tablets, 3 on desktop — same breakpoints as the property grid. */}
-          <ul className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 lg:gap-8">
-            {agents.map((agent) => (
-              <li key={agent.id} className="flex">
-                <AgentCard agent={agent} />
-              </li>
-            ))}
-          </ul>
+          {count > 0 ? (
+            /* 1 column on phones, 2 on tablets, 3 on desktop — same breakpoints as the property grid. */
+            <ul className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 lg:gap-8">
+              {agents.map((agent) => (
+                <li key={agent.id} className="flex">
+                  <AgentCard agent={agent} />
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <AgentEmptyState />
+          )}
         </section>
       </Container>
     </>
