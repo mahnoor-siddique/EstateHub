@@ -10,9 +10,8 @@ import {
   toPropertyDetail,
   toPropertySummary,
 } from "@/lib/queries/supabase/shared";
-import type { PropertyResults } from "@/lib/queries/properties";
 import type { PropertyFilters } from "@/lib/utils/property-filters";
-import type { PropertyDetail } from "@/types/property";
+import type { PropertyDetail, PropertyResults } from "@/types/property";
 
 /*
  * Supabase versions of the property queries in lib/queries/properties.ts, with the same names and

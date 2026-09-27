@@ -52,3 +52,10 @@ export type PropertyDetail = PropertySummary & {
   parkingSpaces: number;
   agentId: string;
 };
+
+/** Result of a /properties search: the matching listings plus the unfiltered total. */
+export type PropertyResults = {
+  properties: PropertySummary[];
+  /** Total listings before filtering, for "Showing X of Y". */
+  total: number;
+};

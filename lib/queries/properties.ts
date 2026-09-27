@@ -1,7 +1,7 @@
 import { DEMO_AGENTS, DEMO_PROPERTIES } from "@/lib/data/demo";
 import type { PropertyFilters, SortOption } from "@/lib/utils/property-filters";
 import type { Agent } from "@/types/agent";
-import type { PropertyDetail, PropertySummary } from "@/types/property";
+import type { PropertyDetail, PropertyResults, PropertySummary } from "@/types/property";
 
 /*
  * Property data access. It filters the local demo listings for now. Phase 6 replaces the body of
@@ -24,12 +24,6 @@ const COMPARATORS: Record<SortOption, (a: PropertySummary, b: PropertySummary) =
   newest: (a, b) => b.listedAt.localeCompare(a.listedAt),
   "price-asc": (a, b) => a.price - b.price,
   "price-desc": (a, b) => b.price - a.price,
-};
-
-export type PropertyResults = {
-  properties: PropertySummary[];
-  /** Total listings before filtering, for "Showing X of Y". */
-  total: number;
 };
 
 export async function getProperties(filters: PropertyFilters): Promise<PropertyResults> {
