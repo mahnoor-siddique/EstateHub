@@ -1,4 +1,6 @@
+import { redirect } from "next/navigation";
 import { cache } from "react";
+import { loginPath, postLoginPath } from "@/lib/auth/routes";
 import type { SessionUser } from "@/lib/auth/types";
 import { createClient } from "@/lib/supabase/server";
 
@@ -27,3 +29,19 @@ export const getCurrentUser = cache(async (): Promise<SessionUser | null> => {
 
   return { id: sub, email: email ?? "", fullName: fullName || null };
 });
+
+/**
+ * For protected pages, layouts and Server Actions: returns the signed-in user, or redirects to
+ * /login?next=<returnTo> so they come back after logging in. This is the authoritative check —
+ * proxy.ts only redirects early for convenience. Pass the path (with query) the user asked for.
+ */
+export async function requireUser(returnTo: string): Promise<SessionUser> {
+  const user = await getCurrentUser();
+  if (!user) redirect(loginPath(returnTo));
+  return user;
+}
+
+/** For /login and /signup: a signed-in user is sent on to `next` (or home) instead. */
+export async function redirectIfSignedIn(next: unknown): Promise<void> {
+  if (await getCurrentUser()) redirect(postLoginPath(next));
+}

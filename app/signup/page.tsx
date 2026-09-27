@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { AuthShell } from "@/components/auth/AuthShell";
 import { SignupForm } from "@/components/auth/SignupForm";
-import { safeRedirectPath } from "@/lib/utils/safe-redirect";
+import { loginPath, postLoginPath } from "@/lib/auth/routes";
+import { redirectIfSignedIn } from "@/lib/auth/session";
 
 export const metadata: Metadata = {
   title: "Create an account",
@@ -11,8 +12,11 @@ export const metadata: Metadata = {
 };
 
 export default async function SignupPage({ searchParams }: PageProps<"/signup">) {
-  const next = safeRedirectPath((await searchParams).next);
-  const loginHref = next === "/" ? "/login" : `/login?next=${encodeURIComponent(next)}`;
+  const params = await searchParams;
+  await redirectIfSignedIn(params.next);
+
+  const next = postLoginPath(params.next);
+  const loginHref = loginPath(next);
 
   return (
     <AuthShell

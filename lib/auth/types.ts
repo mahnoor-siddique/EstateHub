@@ -13,7 +13,7 @@ export type SessionUser = {
 };
 
 /** A one-off message shown above the login form, e.g. after following a confirmation link. */
-export type AuthNotice = { tone: "error" | "success"; message: string };
+export type AuthNotice = { tone: "error" | "success" | "info"; message: string };
 
 export type SignOutState = { status: "idle" } | { status: "error"; message: string };
 

@@ -66,30 +66,28 @@ export function PasswordField({ label, name, error, hint, className, ...props }:
 }
 
 /**
- * Form-level banner: an error (e.g. "Incorrect email or password.") by default, or a
- * `tone="success"` notice (e.g. "Email confirmed").
+ * Form-level banner: an error (e.g. "Incorrect email or password.") by default, a
+ * `tone="success"` notice (e.g. "Email confirmed") or a neutral `tone="info"` hint.
  */
 export function FormAlert({
   message,
   tone = "error",
 }: {
   message?: string;
-  tone?: "error" | "success";
+  tone?: "error" | "success" | "info";
 }) {
   if (!message) return null;
-  const success = tone === "success";
-  const Icon = success ? CheckIcon : AlertIcon;
+  const isError = tone === "error";
+  const Icon = tone === "success" ? CheckIcon : AlertIcon;
   return (
     <div
-      role={success ? "status" : "alert"}
+      role={isError ? "alert" : "status"}
       className={cn(
         "mb-5 flex items-start gap-3 rounded-lg border px-4 py-3 text-sm",
-        success
-          ? "border-gold/50 bg-sand/60 text-navy"
-          : "border-danger/30 bg-danger/5 text-danger",
+        isError ? "border-danger/30 bg-danger/5 text-danger" : "border-gold/50 bg-sand/60 text-navy",
       )}
     >
-      <Icon className={cn("mt-0.5 size-5 shrink-0", success && "text-gold-strong")} />
+      <Icon className={cn("mt-0.5 size-5 shrink-0", !isError && "text-gold-strong")} />
       <p>{message}</p>
     </div>
   );

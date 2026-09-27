@@ -6,7 +6,7 @@ import { redirect } from "next/navigation";
 import { logAuthError, loginErrorMessage, signupErrorMessage } from "@/lib/auth/errors";
 import type { LoginFormState, SignOutState, SignupFormState } from "@/lib/auth/types";
 import { createClient } from "@/lib/supabase/server";
-import { safeRedirectPath } from "@/lib/utils/safe-redirect";
+import { postLoginPath } from "@/lib/auth/routes";
 import { validateLogin, validateSignup } from "@/lib/validations/auth";
 
 /*
@@ -30,7 +30,7 @@ export async function logIn(_prev: LoginFormState, formData: FormData): Promise<
 
   // Re-render server components so anything that reads the session sees the signed-in user.
   revalidatePath("/", "layout");
-  redirect(safeRedirectPath(formData.get("next")));
+  redirect(postLoginPath(formData.get("next")));
 }
 
 export async function signUp(_prev: SignupFormState, formData: FormData): Promise<SignupFormState> {
@@ -42,7 +42,7 @@ export async function signUp(_prev: SignupFormState, formData: FormData): Promis
   if (!result.ok) return { status: "error", fieldErrors: result.fieldErrors, values };
 
   const { fullName, email, password } = result.data;
-  const next = safeRedirectPath(formData.get("next"));
+  const next = postLoginPath(formData.get("next"));
 
   // The confirmation email links back to /auth/confirm on the site the user signed up from.
   // Next.js has already checked that the Origin header matches this host for Server Actions.

@@ -8,10 +8,13 @@ import type { Database } from "@/types/database";
  * token is refreshed here, before rendering, and the new cookies are written both to the request
  * (so this render sees them) and to the response (so the browser keeps them).
  *
- * This only refreshes the session; it is not an authorization check. Protected pages and actions
- * must still verify the user themselves.
+ * Also reports whether the request carries a valid session, so proxy.ts can make optimistic
+ * redirects. That is not an authorization check on its own: protected pages and actions must
+ * still verify the user themselves (requireUser in lib/auth/session.ts).
  */
-export async function updateSession(request: NextRequest) {
+export async function updateSession(
+  request: NextRequest,
+): Promise<{ response: NextResponse; signedIn: boolean }> {
   let response = NextResponse.next({ request });
   const { url, publishableKey } = getSupabaseEnv();
 
@@ -34,7 +37,7 @@ export async function updateSession(request: NextRequest) {
 
   // Do not put code between createServerClient and getClaims: getClaims validates the token and
   // triggers the refresh (and setAll above) when it has expired.
-  await supabase.auth.getClaims();
+  const { data } = await supabase.auth.getClaims();
 
-  return response;
+  return { response, signedIn: Boolean(data?.claims) };
 }

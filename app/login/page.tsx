@@ -2,8 +2,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { AuthShell } from "@/components/auth/AuthShell";
 import { LoginForm } from "@/components/auth/LoginForm";
+import { isProtectedPath, postLoginPath } from "@/lib/auth/routes";
+import { redirectIfSignedIn } from "@/lib/auth/session";
 import type { AuthNotice } from "@/lib/auth/types";
-import { safeRedirectPath } from "@/lib/utils/safe-redirect";
 
 export const metadata: Metadata = {
   title: "Log in",
@@ -12,6 +13,7 @@ export const metadata: Metadata = {
 };
 
 // Messages for known ?error= / ?notice= values (set by /auth/confirm). Unknown values are ignored.
+// Arriving with a protected `next` (e.g. from Book a Viewing) explains why login is needed.
 const ERRORS: Record<string, string> = {
   confirmation:
     "That confirmation link is invalid or has expired. Try logging in, or sign up again to get a new link.",
@@ -20,16 +22,20 @@ const NOTICES: Record<string, string> = {
   "email-confirmed": "Your email is confirmed. Log in to continue.",
 };
 
-function pageNotice(error: unknown, notice: unknown): AuthNotice | undefined {
+function pageNotice(error: unknown, notice: unknown, next: string): AuthNotice | undefined {
   if (typeof error === "string" && ERRORS[error]) return { tone: "error", message: ERRORS[error] };
   if (typeof notice === "string" && NOTICES[notice])
     return { tone: "success", message: NOTICES[notice] };
+  if (isProtectedPath(new URL(next, "http://localhost").pathname))
+    return { tone: "info", message: "Please log in to continue. We'll take you straight back." };
 }
 
 export default async function LoginPage({ searchParams }: PageProps<"/login">) {
   const params = await searchParams;
-  const next = safeRedirectPath(params.next);
-  const notice = pageNotice(params.error, params.notice);
+  await redirectIfSignedIn(params.next);
+
+  const next = postLoginPath(params.next);
+  const notice = pageNotice(params.error, params.notice, next);
   const signupHref = next === "/" ? "/signup" : `/signup?next=${encodeURIComponent(next)}`;
 
   return (
