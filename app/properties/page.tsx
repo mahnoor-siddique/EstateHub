@@ -5,7 +5,7 @@ import { PropertyEmptyState } from "@/components/properties/PropertyEmptyState";
 import { FILTER_FORM_ID, PropertyFilters } from "@/components/properties/PropertyFilters";
 import { PropertyGrid } from "@/components/properties/PropertyGrid";
 import { SortSelect } from "@/components/properties/SortSelect";
-import { getProperties } from "@/lib/queries/properties";
+import { getProperties } from "@/lib/queries/supabase/properties";
 import { clearFiltersHref, parsePropertyFilters } from "@/lib/utils/property-filters";
 
 export const metadata: Metadata = {
@@ -44,7 +44,10 @@ export default async function PropertiesPage({ searchParams }: PageProps<"/prope
           {count > 0 ? (
             <PropertyGrid properties={properties} />
           ) : (
-            <PropertyEmptyState clearHref={clearFiltersHref(filters)} />
+            <PropertyEmptyState
+              clearHref={clearFiltersHref(filters)}
+              reason={total === 0 ? "no-listings" : "no-matches"}
+            />
           )}
         </section>
       </Container>
