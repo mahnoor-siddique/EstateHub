@@ -1,18 +1,17 @@
 import Image from "next/image";
 import { ButtonLink } from "@/components/ui/Button";
 import { ArrowRightIcon, HomeIcon } from "@/components/ui/icons";
-import { AGENT_BANNER_PHOTOS } from "@/lib/data/agent-photos";
 import type { AgentSummary } from "@/types/agent";
 import { AgentAvatar } from "./AgentAvatar";
 
 /**
- * Agent directory card: banner portrait (or navy band + monogram when there is none), name, role, agency, short bio, listing count and a
- * link to the agent's profile. One tab stop per card: the "View Profile" link, whose accessible
- * name includes the agent's name.
+ * Agent directory card: banner portrait from the agent's profile_image (or navy band + monogram when
+ * there is none), name, role, agency, short bio, listing count and a link to the agent's profile.
+ * One tab stop per card: the "View Profile" link, whose accessible name includes the agent's name.
  */
 export function AgentCard({ agent }: { agent: AgentSummary }) {
-  const { id, fullName, title, agencyName, bio, listingCount } = agent;
-  const photo = AGENT_BANNER_PHOTOS[id];
+  const { id, fullName, title, agencyName, bio, listingCount, profileImage } = agent;
+  const photo = profileImage ? { src: profileImage, alt: `Portrait of ${fullName}` } : null;
 
   return (
     <article className="flex w-full flex-col overflow-hidden rounded-card border border-line bg-white shadow-card transition-shadow duration-300 hover:shadow-lift">
@@ -25,7 +24,6 @@ export function AgentCard({ agent }: { agent: AgentSummary }) {
             src={photo.src}
             alt={photo.alt}
             fill
-            placeholder="blur"
             sizes="(min-width: 1024px) 24rem, (min-width: 640px) 50vw, 100vw"
             className="object-cover object-[38%_20%]"
           />
