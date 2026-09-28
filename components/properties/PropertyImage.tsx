@@ -9,7 +9,8 @@ const SCENE_BY_TYPE: Record<PropertyType, Scene> = {
 };
 
 /**
- * A listing's cover photo (its first image), or the designed placeholder for its property type until real photos exist.
+ * A listing's cover photo (its first image, served from Supabase Storage), or the designed placeholder
+ * for its property type when the listing has no photos.
  * Fills its parent, which sets the aspect ratio and must be `relative`.
  */
 export function PropertyImage({
