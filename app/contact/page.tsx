@@ -4,7 +4,8 @@ import { AgentAvatar } from "@/components/agents/AgentAvatar";
 import { BookingPropertyCard } from "@/components/booking/BookingPropertyCard";
 import { ContactForm } from "@/components/contact/ContactForm";
 import { Container } from "@/components/ui/Container";
-import { getCurrentUser } from "@/lib/auth/session";
+import { requireUser } from "@/lib/auth/session";
+import { contactPath } from "@/lib/contact/routes";
 import { getAgentById, getAgents } from "@/lib/queries/supabase/agents";
 import { getPropertyById } from "@/lib/queries/supabase/properties";
 import type { Agent } from "@/types/agent";
@@ -17,7 +18,9 @@ export const metadata: Metadata = {
 };
 
 /*
- * /contact — public; guests and signed-in users can both send an enquiry.
+ * /contact — signed-in only: proxy.ts redirects signed-out visitors early, and requireUser below
+ * is the authoritative check. Either way the login return path keeps propertyId/agentId, so the
+ * user comes back to the same enquiry.
  *   ?propertyId=<uuid>  enquiry about a listing (the agent is always the listing's agent)
  *   ?agentId=<uuid>     enquiry for a specific agent
  *   neither             general enquiry, with an optional agent picker
@@ -28,10 +31,8 @@ export default async function ContactPage({ searchParams }: PageProps<"/contact"
   const propertyParam = typeof params.propertyId === "string" ? params.propertyId : "";
   const agentParam = typeof params.agentId === "string" ? params.agentId : "";
 
-  const [user, property] = await Promise.all([
-    getCurrentUser(),
-    propertyParam ? getPropertyById(propertyParam) : Promise.resolve(null),
-  ]);
+  const user = await requireUser(contactPath(propertyParam, agentParam));
+  const property = propertyParam ? await getPropertyById(propertyParam) : null;
   // A listing's enquiries always go to its own agent, whatever agentId says.
   const agentId = property?.agentId ?? agentParam;
   const agent = agentId ? await getAgentById(agentId) : null;
@@ -76,7 +77,7 @@ export default async function ContactPage({ searchParams }: PageProps<"/contact"
             propertyId={property?.id ?? null}
             agent={agent && { id: agent.id, fullName: agent.fullName, agencyName: agent.agencyName }}
             agentOptions={agentOptions.map(({ id, fullName, agencyName }) => ({ id, fullName, agencyName }))}
-            defaults={{ name: user?.fullName ?? "", email: user?.email ?? "" }}
+            defaults={{ name: user.fullName ?? "", email: user.email }}
           />
         </section>
       </div>

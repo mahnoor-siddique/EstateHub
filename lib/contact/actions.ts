@@ -1,21 +1,29 @@
 "use server";
 
 import type { PostgrestError } from "@supabase/supabase-js";
+import { requireUser } from "@/lib/auth/session";
+import { contactPath } from "@/lib/contact/routes";
 import { createClient } from "@/lib/supabase/server";
 import { validateContact } from "@/lib/validations/contact";
 import type { ContactFormState } from "@/types/contact";
 
 /*
- * Server Action behind the /contact form. Guests and signed-in users can both use it.
+ * Server Action behind the /contact form. Signed-in only: it re-checks the user itself (the proxy
+ * alone is not trusted, and actions can be called directly), sending a guest to login with the
+ * enquiry's property/agent kept in the return path.
  *
- * Identity is never taken from the form: the insert runs with the caller's own Supabase session
- * (none for guests), and the contact_requests_set_defaults trigger sets user_id from that session.
- * The browser has no way to send a user_id — the column is not even insertable.
+ * Identity is never taken from the form: the insert runs with the caller's own Supabase session,
+ * and the contact_requests_set_defaults trigger sets user_id from that session. The browser has
+ * no way to send a user_id — the column is not even insertable.
  */
 export async function sendContactRequest(
   _prev: ContactFormState,
   formData: FormData,
 ): Promise<ContactFormState> {
+  await requireUser(
+    contactPath(String(formData.get("propertyId") ?? ""), String(formData.get("agentId") ?? "")),
+  );
+
   const values = Object.fromEntries(
     (["name", "email", "phone", "message", "agentId"] as const).map((field) => [
       field,
@@ -36,8 +44,7 @@ export async function sendContactRequest(
 
   const { propertyId, agentId, name, email, phone, message } = result.data;
   const supabase = await createClient();
-  // No .select() afterwards: guests cannot read contact requests, so the insert must not ask for
-  // the new row back.
+  // No .select() afterwards: the insert only needs to succeed, not return the new row.
   const { error } = await supabase.from("contact_requests").insert({
     property_id: propertyId,
     agent_id: agentId,

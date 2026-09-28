@@ -22,7 +22,16 @@ function request(path: string, method = "GET") {
 const passesThrough = (response: Response) => response.headers.get("x-middleware-next") === "1";
 
 describe("proxy (signed out)", () => {
-  it.each(["/", "/properties", "/properties?city=Lahore", "/agents", "/contact", "/login", "/signup"])(
+  it.each([
+    "/",
+    "/properties",
+    "/properties?city=Lahore",
+    "/properties/ba3d940c-b0d1-50dd-9fb1-44f62f2d2264",
+    "/agents",
+    "/agents/6ceb4716-6d87-591e-9ead-212a4e979b44",
+    "/login",
+    "/signup",
+  ])(
     "lets %j through",
     async (path) => {
       const response = await proxy(request(path));
@@ -50,8 +59,21 @@ describe("proxy (signed out)", () => {
     expect(response.headers.get("location")).toBe("http://localhost:3000/login?next=%2Fbookings");
   });
 
-  it("leaves Server Action POSTs to the action's own auth check", async () => {
-    const response = await proxy(request("/booking", "POST"));
+  it("sends Contact Agent to login, keeping the property and agent in the return path", async () => {
+    const response = await proxy(request("/contact?propertyId=p1&agentId=a1"));
+    expect(response.status).toBe(307);
+    expect(response.headers.get("location")).toBe(
+      "http://localhost:3000/login?next=%2Fcontact%3FpropertyId%3Dp1%26agentId%3Da1",
+    );
+  });
+
+  it("protects the general contact page too", async () => {
+    const response = await proxy(request("/contact"));
+    expect(response.headers.get("location")).toBe("http://localhost:3000/login?next=%2Fcontact");
+  });
+
+  it.each(["/booking", "/contact"])("leaves Server Action POSTs to %s to the action's own auth check", async (path) => {
+    const response = await proxy(request(path, "POST"));
     expect(passesThrough(response)).toBe(true);
   });
 });

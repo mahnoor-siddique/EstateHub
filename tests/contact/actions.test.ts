@@ -1,16 +1,21 @@
+import { getURLFromRedirectError } from "next/dist/client/components/redirect";
+import { isRedirectError } from "next/dist/client/components/redirect-error";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 /*
  * sendContactRequest with the Supabase server client mocked, so we can see exactly what would be
- * sent to the database. The live test (contact.integration.test.ts) checks the database side.
+ * sent to the database and control whether the caller is signed in. The live test
+ * (contact.integration.test.ts) checks the database side.
  */
 
 const inserts: unknown[] = [];
 let selectCalled = false;
 let insertError: { code: string; message: string } | null = null;
+let claims: Record<string, unknown> | null = null;
 
 vi.mock("@/lib/supabase/server", () => ({
   createClient: async () => ({
+    auth: { getClaims: async () => ({ data: claims && { claims }, error: null }) },
     from: (table: string) => {
       expect(table).toBe("contact_requests");
       return {
@@ -50,13 +55,59 @@ function form(fields: Record<string, string>) {
 
 const idle = { status: "idle" } as const;
 
+/** Runs fn and returns the URL it redirected to (Next's redirect() works by throwing). */
+async function redirectTarget(fn: () => Promise<unknown>) {
+  try {
+    await fn();
+  } catch (error) {
+    if (isRedirectError(error)) return getURLFromRedirectError(error);
+    throw error;
+  }
+  return null;
+}
+
 beforeEach(() => {
   inserts.length = 0;
   selectCalled = false;
   insertError = null;
+  claims = { sub: "user-1", email: "ayesha@example.com" };
 });
 
-describe("sendContactRequest", () => {
+describe("sendContactRequest (signed out)", () => {
+  beforeEach(() => {
+    claims = null;
+  });
+
+  it("rejects a direct call and sends the guest to login, keeping the property and agent", async () => {
+    const target = await redirectTarget(() =>
+      sendContactRequest(idle, form({ propertyId: PROPERTY_ID, agentId: AGENT_ID })),
+    );
+    expect(target).toBe(
+      `/login?next=${encodeURIComponent(`/contact?propertyId=${PROPERTY_ID}&agentId=${AGENT_ID}`)}`,
+    );
+    expect(inserts).toHaveLength(0);
+  });
+
+  it("keeps an agent-only enquiry's context", async () => {
+    const target = await redirectTarget(() => sendContactRequest(idle, form({ agentId: AGENT_ID })));
+    expect(target).toBe(`/login?next=${encodeURIComponent(`/contact?agentId=${AGENT_ID}`)}`);
+  });
+
+  it("drops tampered ids from the return path", async () => {
+    const target = await redirectTarget(() =>
+      sendContactRequest(idle, form({ propertyId: "//evil.com", agentId: "x&next=/y" })),
+    );
+    expect(target).toBe(`/login?next=${encodeURIComponent("/contact")}`);
+  });
+
+  it("checks the session before anything else, even for honeypot or invalid submissions", async () => {
+    expect(await redirectTarget(() => sendContactRequest(idle, form({ website: "spam" })))).toMatch(/^\/login/);
+    expect(await redirectTarget(() => sendContactRequest(idle, form({ email: "nope" })))).toMatch(/^\/login/);
+    expect(inserts).toHaveLength(0);
+  });
+});
+
+describe("sendContactRequest (signed in)", () => {
   it("saves a valid enquiry and reports success", async () => {
     const state = await sendContactRequest(idle, form({ propertyId: PROPERTY_ID, agentId: AGENT_ID }));
     expect(state).toEqual({ status: "success", email: "ayesha@example.com" });
@@ -82,7 +133,7 @@ describe("sendContactRequest", () => {
     expect(JSON.stringify(inserts[0])).not.toContain("00000000-0000-0000-0000-000000000000");
   });
 
-  it("does not ask for the row back (guests may not read contact requests)", async () => {
+  it("does not ask for the row back", async () => {
     await sendContactRequest(idle, form({}));
     expect(selectCalled).toBe(false);
   });

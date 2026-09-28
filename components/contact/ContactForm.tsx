@@ -19,7 +19,7 @@ const AGENT_HINT = "Leave as is for a general enquiry.";
 type AgentOption = { id: string; fullName: string; agencyName: string };
 
 /**
- * Contact-an-agent form, for guests and signed-in users alike. Posts to the sendContactRequest
+ * Contact-an-agent form, for signed-in users (the page requires login). Posts to the sendContactRequest
  * Server Action (works before hydration too); the button is disabled while sending and the form
  * is replaced by a confirmation on success, so an enquiry is not sent twice by accident.
  *

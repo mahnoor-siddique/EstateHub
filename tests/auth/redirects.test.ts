@@ -32,11 +32,12 @@ describe("safeRedirectPath", () => {
 });
 
 describe("route rules", () => {
-  it.each(["/booking", "/booking/", "/booking/confirm", "/bookings", "/bookings/"])("%j is protected", (path) =>
-    expect(isProtectedPath(path)).toBe(true),
+  it.each(["/booking", "/booking/", "/booking/confirm", "/bookings", "/bookings/", "/contact", "/contact/"])(
+    "%j is protected",
+    (path) => expect(isProtectedPath(path)).toBe(true),
   );
 
-  it.each(["/", "/properties", "/properties/123", "/agents", "/contact", "/bookingsx", "/login"])(
+  it.each(["/", "/properties", "/properties/123", "/agents", "/agents/123", "/bookingsx", "/contacts", "/login"])(
     "%j is public",
     (path) => expect(isProtectedPath(path)).toBe(false),
   );
@@ -65,6 +66,7 @@ describe("postLoginPath", () => {
   it("returns a safe destination unchanged", () => {
     expect(postLoginPath("/properties?city=Lahore")).toBe("/properties?city=Lahore");
     expect(postLoginPath("/booking?propertyId=abc")).toBe("/booking?propertyId=abc");
+    expect(postLoginPath("/contact?propertyId=abc&agentId=def")).toBe("/contact?propertyId=abc&agentId=def");
   });
 
   it.each(["/login", "/signup?next=%2Fbooking", "/login/", "//evil.com", "https://evil.com", null])(

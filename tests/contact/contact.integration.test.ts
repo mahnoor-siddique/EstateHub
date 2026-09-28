@@ -3,12 +3,12 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { Database } from "@/types/database";
 
 /*
- * Live checks of contact_requests permissions (migration 20260930000000_contact_requests.sql) as
- * an anonymous guest and as the signed-in test user. Runs only when AUTH_TEST_EMAIL /
- * AUTH_TEST_PASSWORD are set (see .env.example).
+ * Live checks of contact_requests permissions (migrations 20260930000000_contact_requests.sql and
+ * 20261001000000_contact_requests_require_auth.sql) as an anonymous guest and as the signed-in
+ * test user. Runs only when AUTH_TEST_EMAIL / AUTH_TEST_PASSWORD are set (see .env.example).
  *
- * Unlike the booking checks, this suite must write: each run saves exactly two clearly labelled
- * enquiries (one guest, one signed-in). Every other insert here must be rejected.
+ * Unlike the booking checks, this suite must write: each run saves exactly one clearly labelled
+ * signed-in enquiry. Every other insert here must be rejected.
  */
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
@@ -58,16 +58,16 @@ describe.skipIf(!enabled)("contact requests (live)", () => {
   });
 
   describe("guests", () => {
-    it("can send a valid enquiry", async () => {
+    it("cannot send an enquiry, even a valid one", async () => {
       const { error } = await guest.from("contact_requests").insert(enquiry({ agent_id: listingAgentId }));
-      expect(error).toBeNull();
+      expect(error?.code).toBe("42501"); // no insert privilege for anon
     });
 
     it("cannot claim to be a user", async () => {
       const { error } = await guest
         .from("contact_requests")
         .insert({ ...enquiry(), user_id: SOMEONE_ELSE } as never);
-      expect(error?.code).toBe("42501"); // user_id is not an insertable column
+      expect(error?.code).toBe("42501");
     });
 
     it("cannot read any contact requests", async () => {
@@ -110,16 +110,16 @@ describe.skipIf(!enabled)("contact requests (live)", () => {
 
   describe("invalid enquiries are rejected", () => {
     it("rejects an agent that does not handle the property", async () => {
-      const { error } = await guest
+      const { error } = await user
         .from("contact_requests")
         .insert(enquiry({ property_id: propertyId, agent_id: otherAgentId }));
       expect(error?.code).toBe("P0001");
     });
 
     it("rejects unknown properties and agents", async () => {
-      const property = await guest.from("contact_requests").insert(enquiry({ property_id: SOMEONE_ELSE }));
+      const property = await user.from("contact_requests").insert(enquiry({ property_id: SOMEONE_ELSE }));
       expect(property.error?.code).toBe("23503");
-      const agent = await guest.from("contact_requests").insert(enquiry({ agent_id: SOMEONE_ELSE }));
+      const agent = await user.from("contact_requests").insert(enquiry({ agent_id: SOMEONE_ELSE }));
       expect(agent.error?.code).toBe("23503");
     });
 
@@ -129,12 +129,12 @@ describe.skipIf(!enabled)("contact requests (live)", () => {
       ["an empty name", { name: "" }],
       ["an overlong phone", { phone: "1".repeat(31) }],
     ])("rejects %s via the table constraints", async (_label, overrides) => {
-      const { error } = await guest.from("contact_requests").insert(enquiry(overrides));
+      const { error } = await user.from("contact_requests").insert(enquiry(overrides));
       expect(error?.code).toBe("23514");
     });
 
     it("does not let clients set the creation time", async () => {
-      const { error } = await guest
+      const { error } = await user
         .from("contact_requests")
         .insert({ ...enquiry(), created_at: "2000-01-01T00:00:00Z" });
       expect(error?.code).toBe("42501");
