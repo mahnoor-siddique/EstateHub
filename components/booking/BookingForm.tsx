@@ -8,6 +8,7 @@ import { ButtonLink } from "@/components/ui/Button";
 import { Select, fieldClass } from "@/components/ui/form";
 import { CalendarCheckIcon } from "@/components/ui/icons";
 import { createBooking } from "@/lib/booking/actions";
+import { bookingReference } from "@/lib/booking/history";
 import { cn } from "@/lib/utils/cn";
 import { formatBookingDate, formatBookingTime } from "@/lib/utils/format";
 import { BOOKING_TIME_SLOTS, MESSAGE_MAX } from "@/lib/validations/booking";
@@ -177,7 +178,7 @@ function BookingSuccess({
           ["Date", formatBookingDate(booking.date)],
           ["Time", formatBookingTime(booking.time)],
           ["Status", BOOKING_STATUS_LABELS[booking.status]],
-          ["Reference", booking.id.slice(0, 8).toUpperCase()],
+          ["Reference", bookingReference(booking.id)],
         ].map(([term, detail]) => (
           <div key={term} className="flex justify-between gap-4 px-4 py-3">
             <dt className="text-stone">{term}</dt>
@@ -187,10 +188,10 @@ function BookingSuccess({
       </dl>
 
       <div className="mt-6 grid gap-3 sm:grid-cols-2">
+        <ButtonLink href="/bookings">View my bookings</ButtonLink>
         <ButtonLink href={`/properties/${propertyId}`} variant="secondary">
           Back to property
         </ButtonLink>
-        <ButtonLink href="/properties">Browse more properties</ButtonLink>
       </div>
     </div>
   );

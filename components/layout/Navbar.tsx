@@ -6,7 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import { SignOutButton } from "@/components/auth/SignOutButton";
 import { UserBadge } from "@/components/auth/UserBadge";
 import type { SessionUser } from "@/lib/auth/types";
-import { AUTH_LINKS, NAV_LINKS } from "@/lib/site";
+import { ACCOUNT_LINKS, AUTH_LINKS, NAV_LINKS } from "@/lib/site";
 import { cn } from "@/lib/utils/cn";
 import { ButtonLink } from "@/components/ui/Button";
 import { Container } from "@/components/ui/Container";
@@ -21,7 +21,8 @@ function isActive(pathname: string, href: string) {
 
 /**
  * Sticky site navigation.
- * - lg and up: inline links + Login / Get Started, or the user's name + Sign out when signed in.
+ * - lg and up: inline links + Login / Get Started, or the user's name, My bookings and Sign out
+ *   when signed in.
  * - below lg (tablet + mobile): logo + hamburger that opens a full-width panel.
  *
  * `user` comes from the root layout, which reads the verified session on the server, so the
@@ -79,8 +80,16 @@ export function Navbar({ user }: { user: SessionUser | null }) {
         </nav>
 
         {user ? (
-          <div className="hidden items-center gap-4 lg:flex">
+          <div className="hidden items-center gap-3 lg:flex">
             <UserBadge user={user} compact />
+            <ButtonLink
+              href={ACCOUNT_LINKS.bookings.href}
+              variant="ghost"
+              aria-current={isActive(pathname, ACCOUNT_LINKS.bookings.href) ? "page" : undefined}
+              className="aria-[current=page]:text-gold-strong"
+            >
+              {ACCOUNT_LINKS.bookings.label}
+            </ButtonLink>
             <SignOutButton errorPlacement="popover" />
           </div>
         ) : (
@@ -135,9 +144,18 @@ export function Navbar({ user }: { user: SessionUser | null }) {
             </ul>
           </nav>
           {user ? (
-            <div className="mt-5 space-y-4 mb-2 rounded-card border border-line bg-white p-4 sm:flex sm:items-center sm:justify-between sm:gap-4 sm:space-y-0">
+            <div className="mt-5 mb-2 space-y-4 rounded-card border border-line bg-white p-4">
               <UserBadge user={user} />
-              <SignOutButton className="sm:w-40 sm:shrink-0" />
+              <div className="grid gap-3 sm:grid-cols-2">
+                <ButtonLink
+                  href={ACCOUNT_LINKS.bookings.href}
+                  aria-current={isActive(pathname, ACCOUNT_LINKS.bookings.href) ? "page" : undefined}
+                  onClick={() => setOpenedOn(null)}
+                >
+                  {ACCOUNT_LINKS.bookings.label}
+                </ButtonLink>
+                <SignOutButton />
+              </div>
             </div>
           ) : (
             <div className="mt-5 grid grid-cols-2 gap-3 pb-2">

@@ -45,6 +45,11 @@ describe("proxy (signed out)", () => {
     );
   });
 
+  it("protects the booking history page", async () => {
+    const response = await proxy(request("/bookings"));
+    expect(response.headers.get("location")).toBe("http://localhost:3000/login?next=%2Fbookings");
+  });
+
   it("leaves Server Action POSTs to the action's own auth check", async () => {
     const response = await proxy(request("/booking", "POST"));
     expect(passesThrough(response)).toBe(true);

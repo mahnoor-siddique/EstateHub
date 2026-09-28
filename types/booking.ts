@@ -15,6 +15,20 @@ export const BOOKING_STATUS_LABELS: Record<BookingStatus, string> = {
 /** A listing as shown on the booking page, with whether it can still be viewed. */
 export type BookableProperty = PropertySummary & { available: boolean };
 
+/** One row of the signed-in user's booking history (/bookings). */
+export type UserBooking = {
+  id: string;
+  reference: string; // short, human-friendly form of the id (first 8 characters, upper case)
+  date: string; // YYYY-MM-DD
+  time: string; // HH:MM
+  status: BookingStatus;
+  message: string | null;
+  createdAt: string; // ISO timestamp
+  /** null only if the listing cannot be read (deleting a listing also deletes its bookings). */
+  property: PropertySummary | null;
+  agent: { id: string; fullName: string; agencyName: string } | null;
+};
+
 /** A booking the user has just created, as echoed back on the success screen. */
 export type CreatedBooking = {
   id: string;

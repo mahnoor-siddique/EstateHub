@@ -32,11 +32,11 @@ describe("safeRedirectPath", () => {
 });
 
 describe("route rules", () => {
-  it.each(["/booking", "/booking/", "/booking/confirm"])("%j is protected", (path) =>
+  it.each(["/booking", "/booking/", "/booking/confirm", "/bookings", "/bookings/"])("%j is protected", (path) =>
     expect(isProtectedPath(path)).toBe(true),
   );
 
-  it.each(["/", "/properties", "/properties/123", "/agents", "/contact", "/bookings", "/login"])(
+  it.each(["/", "/properties", "/properties/123", "/agents", "/contact", "/bookingsx", "/login"])(
     "%j is public",
     (path) => expect(isProtectedPath(path)).toBe(false),
   );

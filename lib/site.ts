@@ -20,6 +20,11 @@ export const AUTH_LINKS = {
   signup: { label: "Get Started", href: "/signup" },
 } as const;
 
+/** Links shown only to signed-in users. */
+export const ACCOUNT_LINKS = {
+  bookings: { label: "My bookings", href: "/bookings" },
+} as const;
+
 export const CITIES = [
   "Lahore",
   "Islamabad",

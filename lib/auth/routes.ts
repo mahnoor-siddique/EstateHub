@@ -9,9 +9,10 @@ import { safeRedirectPath } from "@/lib/utils/safe-redirect";
 
 /**
  * Signed-in only. A booking always belongs to a user (bookings.user_id is required), so the
- * booking flow sits behind login. Contact requests allow guests and are deliberately not listed.
+ * booking flow (/booking) and the user's booking history (/bookings) sit behind login. Contact
+ * requests allow guests and are deliberately not listed.
  */
-export const PROTECTED_ROUTES = ["/booking"] as const;
+export const PROTECTED_ROUTES = ["/booking", "/bookings"] as const;
 
 /** Signed-out only: a signed-in user is sent on instead of seeing these again. */
 export const AUTH_ROUTES = ["/login", "/signup"] as const;
