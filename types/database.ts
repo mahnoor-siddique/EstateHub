@@ -301,8 +301,9 @@ export type Database = {
           created_at: string;
         };
         Insert: {
+          // No user_id: the contact_requests_set_defaults trigger sets it from the caller's
+          // session, and clients have no insert privilege on that column.
           id?: string;
-          user_id?: string | null;
           property_id?: string | null;
           agent_id?: string | null;
           name: string;

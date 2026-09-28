@@ -6,7 +6,7 @@ import { AgentAvatar } from "@/components/agents/AgentAvatar";
 import { PropertyGrid } from "@/components/properties/PropertyGrid";
 import { ButtonLink } from "@/components/ui/Button";
 import { Container } from "@/components/ui/Container";
-import { ArrowLeftIcon, CheckIcon, HomeIcon, PinIcon } from "@/components/ui/icons";
+import { ArrowLeftIcon, CheckIcon, HomeIcon, MessageIcon, PinIcon } from "@/components/ui/icons";
 import { getAgentById, getPropertiesByAgent } from "@/lib/queries/supabase/agents";
 
 // Agents and their listings come from Supabase, so each request renders fresh data rather than a
@@ -87,6 +87,11 @@ export default async function AgentProfilePage({ params }: PageProps<"/agents/[i
           <p className="mt-2 text-base text-stone sm:text-lg">{title}</p>
 
           <p className="mt-6 max-w-3xl text-base leading-relaxed text-charcoal sm:text-lg">{bio}</p>
+
+          <ButtonLink href={`/contact?${new URLSearchParams({ agentId: agent.id })}`} className="mt-6">
+            <MessageIcon className="size-5" />
+            Contact {firstName}
+          </ButtonLink>
 
           <h2 className="sr-only">At a glance</h2>
           <dl className="mt-8 grid gap-3 sm:grid-cols-3 sm:gap-4">

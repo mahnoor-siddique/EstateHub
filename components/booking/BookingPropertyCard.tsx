@@ -5,8 +5,14 @@ import { cn } from "@/lib/utils/cn";
 import { formatPrice } from "@/lib/utils/format";
 import type { PropertySummary } from "@/types/property";
 
-/** Compact summary of the listing being booked, shown beside the form. */
-export function BookingPropertyCard({ property }: { property: PropertySummary }) {
+/** Compact summary of a listing, shown beside the booking and contact forms. */
+export function BookingPropertyCard({
+  property,
+  eyebrow = "You're booking",
+}: {
+  property: PropertySummary;
+  eyebrow?: string;
+}) {
   const sale = property.listingType === "For Sale";
   return (
     <article className="overflow-hidden rounded-card border border-line bg-white shadow-card">
@@ -23,7 +29,7 @@ export function BookingPropertyCard({ property }: { property: PropertySummary })
       </div>
       <div className="p-5">
         <p className="text-xs font-semibold tracking-[0.18em] text-gold-strong uppercase">
-          You&apos;re booking
+          {eyebrow}
         </p>
         <h2 className="mt-2 text-xl font-semibold text-balance">
           <Link
