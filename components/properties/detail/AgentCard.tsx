@@ -12,8 +12,9 @@ function initials(name: string) {
 }
 
 /**
- * Listing agent plus the two enquiry actions. The actions link to the planned /booking and /contact
- * routes, passing the property (and agent) id so those forms can be pre-filled when they are built.
+ * Listing agent plus the two enquiry actions. Book a Viewing opens /booking (sign-in required);
+ * Contact Agent points to the planned /contact route. Both pass the property (and agent) id so the
+ * forms can be pre-filled.
  */
 export function AgentCard({ agent, propertyId }: { agent: Agent | null; propertyId: string }) {
   const bookingHref = `/booking?${new URLSearchParams({ propertyId })}`;

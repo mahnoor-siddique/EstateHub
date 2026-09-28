@@ -16,3 +16,21 @@ export function formatPrice(amount: number, listing: ListingType): string {
   else text = amount.toLocaleString("en-US");
   return listing === "For Rent" ? `PKR ${text} / month` : `PKR ${text}`;
 }
+
+/** "2026-10-03" -> "Saturday, 3 October 2026". Parsed as UTC so the day never shifts. */
+export function formatBookingDate(date: string): string {
+  return new Intl.DateTimeFormat("en-GB", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    timeZone: "UTC",
+  }).format(new Date(`${date}T00:00:00Z`));
+}
+
+/** "14:30" -> "2:30 PM". */
+export function formatBookingTime(time: string): string {
+  const [hours, minutes] = time.split(":").map(Number);
+  const suffix = hours >= 12 ? "PM" : "AM";
+  return `${hours % 12 || 12}:${String(minutes).padStart(2, "0")} ${suffix}`;
+}

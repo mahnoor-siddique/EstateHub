@@ -239,7 +239,8 @@ export type Database = {
           id?: string;
           user_id: string;
           property_id: string;
-          agent_id: string;
+          // Filled from the property by the bookings_set_defaults trigger; clients cannot set it.
+          agent_id?: string;
           booking_date: string;
           booking_time: string;
           name: string;

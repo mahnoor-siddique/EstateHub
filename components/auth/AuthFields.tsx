@@ -96,12 +96,13 @@ export function FormAlert({
 const errorClass = "border-danger hover:border-danger focus-visible:border-danger";
 
 // The error replaces the hint while shown, so point at whichever one is on screen.
-function describedBy(id: string, error?: string, hint?: string) {
+export function describedBy(id: string, error?: string, hint?: string) {
   if (error) return `${id}-error`;
   return hint ? `${id}-hint` : undefined;
 }
 
-function FieldFrame({
+/** Label + control + hint/error wrapper, shared with other forms (e.g. booking) for custom controls. */
+export function FieldFrame({
   id,
   label,
   error,
