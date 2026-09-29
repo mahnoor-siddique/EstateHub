@@ -4,7 +4,7 @@ import type { Database } from "@/types/database";
 
 /*
  * Live checks of contact_requests permissions (migrations 20260930000000_contact_requests.sql and
- * 20261001000000_contact_requests_require_auth.sql) as an anonymous guest and as the signed-in
+ * 20261002000000_contact_requests_require_auth.sql) as an anonymous guest and as the signed-in
  * test user. Runs only when AUTH_TEST_EMAIL / AUTH_TEST_PASSWORD are set (see .env.example).
  *
  * Unlike the booking checks, this suite must write: each run saves exactly one clearly labelled
