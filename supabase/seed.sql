@@ -23,6 +23,10 @@
 -- works in any project where those files are uploaded. image_url holds this project's public URL
 -- for the same object, as a readable fallback.
 --
+-- Agent portraits (Phase 10) live in the same bucket under agents/<name>.webp. agents has no
+-- storage_path column, so profile_image holds the photo's full public URL, which the app uses
+-- directly.
+--
 -- How to run (needs a privileged role — the website's publishable key cannot write, by design):
 --   * Supabase dashboard → SQL Editor: paste this file and run it, or
 --   * Supabase CLI: `supabase db reset` runs it automatically against a local database.
@@ -34,9 +38,9 @@ set constraints public.property_images_property_id_sort_order_key deferred;
 
 insert into public.agents (id, full_name, title, bio, agency_name, profile_image, created_at)
 values
-  ('6ceb4716-6d87-591e-9ead-212a4e979b44', 'Sara Malik', 'Senior Property Consultant', 'Sara advises buyers and sellers on premium family homes and villas in DHA Lahore and DHA Islamabad, with a focus on realistic valuations and smooth, well-documented transfers.', 'Northgate Realty', null, '2026-08-01 00:00:00+00'),
-  ('a95715d6-6aea-5d6c-a00e-d167473cf091', 'Hamza Qureshi', 'Residential Sales Advisor', 'Hamza specialises in apartments and penthouses, from sea-facing homes in Clifton to high-rise living in Gulberg, helping clients compare buildings, amenities and long-term value.', 'Harbourline Estates', null, '2026-08-01 00:01:00+00'),
-  ('08b56262-64ee-5f94-ad69-a602daed5be9', 'Ayesha Rehman', 'Lettings & Sales Specialist', 'Ayesha handles family homes for sale and rent in Rawalpindi and Faisalabad, guiding first-time buyers and tenants through viewings, paperwork and move-in day.', 'Greenfield Property Group', null, '2026-08-01 00:02:00+00')
+  ('6ceb4716-6d87-591e-9ead-212a4e979b44', 'Sara Malik', 'Senior Property Consultant', 'Sara advises buyers and sellers on premium family homes and villas in DHA Lahore and DHA Islamabad, with a focus on realistic valuations and smooth, well-documented transfers.', 'Northgate Realty', 'https://upcbzkijukmqkhjmmzja.supabase.co/storage/v1/object/public/property-images/agents/sara-malik.webp', '2026-08-01 00:00:00+00'),
+  ('a95715d6-6aea-5d6c-a00e-d167473cf091', 'Hamza Qureshi', 'Residential Sales Advisor', 'Hamza specialises in apartments and penthouses, from sea-facing homes in Clifton to high-rise living in Gulberg, helping clients compare buildings, amenities and long-term value.', 'Harbourline Estates', 'https://upcbzkijukmqkhjmmzja.supabase.co/storage/v1/object/public/property-images/agents/hamza-qureshi.webp', '2026-08-01 00:01:00+00'),
+  ('08b56262-64ee-5f94-ad69-a602daed5be9', 'Ayesha Rehman', 'Lettings & Sales Specialist', 'Ayesha handles family homes for sale and rent in Rawalpindi and Faisalabad, guiding first-time buyers and tenants through viewings, paperwork and move-in day.', 'Greenfield Property Group', 'https://upcbzkijukmqkhjmmzja.supabase.co/storage/v1/object/public/property-images/agents/ayesha-rehman.webp', '2026-08-01 00:02:00+00')
 on conflict (id) do update set
   full_name = excluded.full_name,
   title = excluded.title,

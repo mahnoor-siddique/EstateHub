@@ -1,15 +1,7 @@
+import { AgentAvatar } from "@/components/agents/AgentAvatar";
 import { ButtonLink } from "@/components/ui/Button";
 import { CalendarCheckIcon, MessageIcon } from "@/components/ui/icons";
 import type { Agent } from "@/types/agent";
-
-function initials(name: string) {
-  return name
-    .split(/\s+/)
-    .map((part) => part[0])
-    .slice(0, 2)
-    .join("")
-    .toUpperCase();
-}
 
 /**
  * Listing agent plus the two enquiry actions. Book a Viewing opens /booking and Contact Agent opens
@@ -33,12 +25,7 @@ export function AgentCard({ agent, propertyId }: { agent: Agent | null; property
 
       {agent ? (
         <div className="mt-4 flex items-center gap-4">
-          <span
-            aria-hidden="true"
-            className="grid size-14 shrink-0 place-items-center rounded-full bg-navy font-serif text-lg font-semibold text-gold"
-          >
-            {initials(agent.fullName)}
-          </span>
+          <AgentAvatar agent={agent} className="size-14 text-lg" />
           <div className="min-w-0">
             <p className="font-serif text-xl font-semibold text-navy">{agent.fullName}</p>
             <p className="text-sm text-stone">{agent.title}</p>

@@ -70,3 +70,33 @@ describe("seeded property photos", () => {
     expect(insert).not.toContain("/images/properties/");
   });
 });
+
+describe("seeded agent portraits", () => {
+  const agentsInsert = seed.slice(
+    seed.indexOf("insert into public.agents"),
+    seed.indexOf("insert into public.properties"),
+  );
+  // (id, full_name, ..., profile_image, created_at)
+  const portraits = new Map(
+    [...agentsInsert.matchAll(/\('([0-9a-f-]{36})', '([^']+)',.*, '([^']+)', '[^']+'\)/g)].map((m) => [
+      m[2],
+      { id: m[1], url: m[3] },
+    ]),
+  );
+
+  it("gives each agent their own portrait in the property-images bucket's agents/ folder", () => {
+    expect(portraits).toEqual(
+      new Map(
+        [
+          ["Sara Malik", "6ceb4716-6d87-591e-9ead-212a4e979b44", "sara-malik"],
+          ["Hamza Qureshi", "a95715d6-6aea-5d6c-a00e-d167473cf091", "hamza-qureshi"],
+          ["Ayesha Rehman", "08b56262-64ee-5f94-ad69-a602daed5be9", "ayesha-rehman"],
+        ].map(([name, id, file]) => [name, { id, url: expect.stringMatching(new RegExp(`^https://[a-z0-9]+\\.supabase\\.co/storage/v1/object/public/property-images/agents/${file}\\.webp$`)) }]),
+      ),
+    );
+  });
+
+  it("no longer references the local /images/agents files", () => {
+    expect(agentsInsert).not.toContain("/images/agents/");
+  });
+});

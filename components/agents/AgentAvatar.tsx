@@ -12,9 +12,11 @@ function initials(name: string) {
 }
 
 /**
- * Round agent portrait. Until real photos exist it shows a navy monogram with gold serif initials.
- * When `profileImage` is set the photo fills the same circle, so cards need no layout changes.
- * Decorative for screen readers: the agent's name is always printed next to it.
+ * Round agent portrait: the agent's profile_image when set, otherwise a navy monogram with gold
+ * serif initials in the same circle, so cards need no layout changes.
+ * The portraits are wide banners with the face left of centre, so the circle is cropped around
+ * 32% across rather than the middle. Decorative for screen readers: the agent's name is always
+ * printed next to it.
  */
 export function AgentAvatar({ agent, className }: { agent: Agent; className?: string }) {
   return (
@@ -26,7 +28,7 @@ export function AgentAvatar({ agent, className }: { agent: Agent; className?: st
       )}
     >
       {agent.profileImage ? (
-        <Image src={agent.profileImage} alt="" fill sizes="96px" className="object-cover" />
+        <Image src={agent.profileImage} alt="" fill sizes="128px" className="object-cover object-[32%_50%]" />
       ) : (
         <>
           <span className="absolute inset-1.5 rounded-full border border-gold/40" />
