@@ -349,9 +349,12 @@ export type Database = {
       };
     };
     Views: { [_ in never]: never };
-    Functions: { [_ in never]: never };
+    Functions: {
+      // supabase/migrations/20261003000100_admin_authorization.sql — true when the caller is an admin.
+      is_admin: { Args: Record<PropertyKey, never>; Returns: boolean };
+    };
     Enums: {
-      user_role: "user" | "agent";
+      user_role: "user" | "agent" | "admin";
       property_type: "House" | "Apartment" | "Villa" | "Commercial";
       listing_type: "For Sale" | "For Rent";
       property_status: "available" | "pending" | "sold" | "rented";

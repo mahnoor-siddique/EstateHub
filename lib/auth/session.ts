@@ -1,7 +1,7 @@
-import { redirect } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { cache } from "react";
 import { loginPath, postLoginPath } from "@/lib/auth/routes";
-import type { SessionUser } from "@/lib/auth/types";
+import type { AdminUser, SessionUser, UserRole } from "@/lib/auth/types";
 import { createClient } from "@/lib/supabase/server";
 
 /*
@@ -44,4 +44,56 @@ export async function requireUser(returnTo: string): Promise<SessionUser> {
 /** For /login and /signup: a signed-in user is sent on to `next` (or home) instead. */
 export async function redirectIfSignedIn(next: unknown): Promise<void> {
   if (await getCurrentUser()) redirect(postLoginPath(next));
+}
+
+/*
+ * The signed-in user's role, read from their row in public.profiles — never from the token's
+ * metadata, a cookie or anything else the browser can change. The query runs with the user's own
+ * verified session, and Row Level Security only lets it see their own profile. Any failure (signed
+ * out, missing profile, network/database error) returns null, which callers treat as "not an
+ * admin": access fails closed.
+ */
+const getCurrentProfile = cache(
+  async (): Promise<{ role: UserRole; fullName: string | null } | null> => {
+    const user = await getCurrentUser();
+    if (!user) return null;
+
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("role, full_name")
+      .eq("id", user.id)
+      .maybeSingle();
+
+    if (error) {
+      console.error("[auth] profile role check failed", { code: error.code });
+      return null;
+    }
+    if (!data) return null;
+
+    return { role: data.role, fullName: data.full_name?.trim() || null };
+  },
+);
+
+/** True only when the signed-in user's profile role is `admin`. For showing admin navigation. */
+export async function isCurrentUserAdmin(): Promise<boolean> {
+  return (await getCurrentProfile())?.role === "admin";
+}
+
+/**
+ * The one authorization check for every admin page, layout and Server Action:
+ *   * signed out -> redirect to /login?next=<returnTo> (made safe by loginPath);
+ *   * signed in but not an admin (or the role cannot be verified) -> 404, so the admin area's
+ *     existence and contents are not revealed.
+ * Call it in each admin page/action as well as the layout: layouts do not gate their child
+ * segments on their own.
+ */
+export async function requireAdmin(returnTo: string): Promise<AdminUser> {
+  const user = await getCurrentUser();
+  if (!user) redirect(loginPath(returnTo));
+
+  const profile = await getCurrentProfile();
+  if (profile?.role !== "admin") notFound();
+
+  return { ...user, fullName: profile.fullName ?? user.fullName, role: "admin" };
 }

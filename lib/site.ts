@@ -25,6 +25,9 @@ export const ACCOUNT_LINKS = {
   bookings: { label: "My bookings", href: "/bookings" },
 } as const;
 
+/** Shown only to users whose profile role is `admin` (checked on the server). */
+export const ADMIN_LINK = { label: "Admin", href: "/admin" } as const;
+
 export const CITIES = [
   "Lahore",
   "Islamabad",

@@ -11,9 +11,10 @@ import { safeRedirectPath } from "@/lib/utils/safe-redirect";
  * Signed-in only. A booking always belongs to a user (bookings.user_id is required), so the
  * booking flow (/booking) and the user's booking history (/bookings) sit behind login, and so does
  * contacting an agent (/contact). Agent profiles (/agents) stay public; only the contact flow is
- * gated.
+ * gated. /admin also needs a signed-in user here; its admin-role check is in requireAdmin
+ * (lib/auth/session.ts), since the role is read from the database, not the cookie.
  */
-export const PROTECTED_ROUTES = ["/booking", "/bookings", "/contact"] as const;
+export const PROTECTED_ROUTES = ["/booking", "/bookings", "/contact", "/admin"] as const;
 
 /** Signed-out only: a signed-in user is sent on instead of seeing these again. */
 export const AUTH_ROUTES = ["/login", "/signup"] as const;

@@ -6,7 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import { SignOutButton } from "@/components/auth/SignOutButton";
 import { UserBadge } from "@/components/auth/UserBadge";
 import type { SessionUser } from "@/lib/auth/types";
-import { ACCOUNT_LINKS, AUTH_LINKS, NAV_LINKS } from "@/lib/site";
+import { ACCOUNT_LINKS, ADMIN_LINK, AUTH_LINKS, NAV_LINKS } from "@/lib/site";
 import { cn } from "@/lib/utils/cn";
 import { ButtonLink } from "@/components/ui/Button";
 import { Container } from "@/components/ui/Container";
@@ -28,8 +28,11 @@ function isActive(pathname: string, href: string) {
  * `user` comes from the root layout, which reads the verified session on the server, so the
  * correct state is in the first HTML (no signed-out flash). It is a client component only because
  * of the menu toggle and active-link highlighting.
+ *
+ * `isAdmin` (also from the layout, read from the user's profile role) only decides whether the
+ * Admin link is shown. It is not a security boundary: /admin re-checks the role on the server.
  */
-export function Navbar({ user }: { user: SessionUser | null }) {
+export function Navbar({ user, isAdmin = false }: { user: SessionUser | null; isAdmin?: boolean }) {
   const pathname = usePathname();
   // Remember *which page* the menu was opened on. The menu counts as open only while we
   // are still on that page, so navigating anywhere closes it without an effect.
@@ -82,6 +85,16 @@ export function Navbar({ user }: { user: SessionUser | null }) {
         {user ? (
           <div className="hidden items-center gap-3 lg:flex">
             <UserBadge user={user} compact />
+            {isAdmin && (
+              <ButtonLink
+                href={ADMIN_LINK.href}
+                variant="ghost"
+                aria-current={isActive(pathname, ADMIN_LINK.href) ? "page" : undefined}
+                className="aria-[current=page]:text-gold-strong"
+              >
+                {ADMIN_LINK.label}
+              </ButtonLink>
+            )}
             <ButtonLink
               href={ACCOUNT_LINKS.bookings.href}
               variant="ghost"
@@ -147,6 +160,17 @@ export function Navbar({ user }: { user: SessionUser | null }) {
             <div className="mt-5 mb-2 space-y-4 rounded-card border border-line bg-white p-4">
               <UserBadge user={user} />
               <div className="grid gap-3 sm:grid-cols-2">
+                {isAdmin && (
+                  <ButtonLink
+                    href={ADMIN_LINK.href}
+                    variant="secondary"
+                    aria-current={isActive(pathname, ADMIN_LINK.href) ? "page" : undefined}
+                    onClick={() => setOpenedOn(null)}
+                    className="sm:col-span-2"
+                  >
+                    {ADMIN_LINK.label}
+                  </ButtonLink>
+                )}
                 <ButtonLink
                   href={ACCOUNT_LINKS.bookings.href}
                   aria-current={isActive(pathname, ACCOUNT_LINKS.bookings.href) ? "page" : undefined}

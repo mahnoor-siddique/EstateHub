@@ -72,6 +72,19 @@ describe("proxy (signed out)", () => {
     expect(response.headers.get("location")).toBe("http://localhost:3000/login?next=%2Fcontact");
   });
 
+  it.each([
+    ["/admin", "/login?next=%2Fadmin"],
+    ["/admin/users?page=2", "/login?next=%2Fadmin%2Fusers%3Fpage%3D2"],
+  ])("sends a guest visiting %s to login", async (path, location) => {
+    const response = await proxy(request(path));
+    expect(response.status).toBe(307);
+    expect(response.headers.get("location")).toBe(`http://localhost:3000${location}`);
+  });
+
+  it("does not treat look-alike paths such as /administrator as admin routes", async () => {
+    expect(passesThrough(await proxy(request("/administrator")))).toBe(true);
+  });
+
   it.each(["/booking", "/contact"])("leaves Server Action POSTs to %s to the action's own auth check", async (path) => {
     const response = await proxy(request(path, "POST"));
     expect(passesThrough(response)).toBe(true);

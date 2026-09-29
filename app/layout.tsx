@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Inter, Playfair_Display } from "next/font/google";
 import { Footer } from "@/components/layout/Footer";
 import { Navbar } from "@/components/layout/Navbar";
-import { getCurrentUser } from "@/lib/auth/session";
+import { getCurrentUser, isCurrentUserAdmin } from "@/lib/auth/session";
 import { SITE } from "@/lib/site";
 import "./globals.css";
 
@@ -42,6 +42,8 @@ export const viewport: Viewport = {
 export default async function RootLayout({ children }: LayoutProps<"/">) {
   // Verified on the server so the navbar renders the right signed-in/out state immediately.
   const user = await getCurrentUser();
+  // The role comes from the user's profile row, so only real admins get the Admin link.
+  const isAdmin = user ? await isCurrentUserAdmin() : false;
 
   return (
     <html lang="en" className={`${inter.variable} ${playfair.variable} h-full antialiased`}>
@@ -52,7 +54,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
         >
           Skip to main content
         </a>
-        <Navbar user={user} />
+        <Navbar user={user} isAdmin={isAdmin} />
         <main id="main-content" className="flex-1">
           {children}
         </main>
