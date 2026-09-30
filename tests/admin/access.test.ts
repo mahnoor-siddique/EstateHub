@@ -191,7 +191,10 @@ describe("/admin route", () => {
     for (const section of ["Properties", "Agents", "Bookings", "Contact Requests", "Users"]) {
       expect(html).toContain(section);
     }
-    // Future sections are placeholders, not links to pages that do not exist yet.
-    expect(html).not.toMatch(/href="\/admin\/(properties|agents|bookings|contact-requests|users)"/);
+    // Every section is built now, so each is a link and none is a "Soon" placeholder.
+    for (const path of ["properties", "agents", "bookings", "contact-requests", "users"]) {
+      expect(html).toContain(`href="/admin/${path}"`);
+    }
+    expect(html).not.toContain("Soon");
   });
 });

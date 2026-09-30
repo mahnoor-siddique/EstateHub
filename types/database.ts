@@ -352,6 +352,19 @@ export type Database = {
     Functions: {
       // supabase/migrations/20261003000100_admin_authorization.sql — true when the caller is an admin.
       is_admin: { Args: Record<PropertyKey, never>; Returns: boolean };
+      // supabase/migrations/20261004000000_admin_catalog_management.sql — admin only.
+      admin_property_dependents: {
+        Args: { p_property_id: string };
+        Returns: { images: number; bookings: number; active_bookings: number; contact_requests: number }[];
+      };
+      admin_agent_dependents: {
+        Args: { p_agent_id: string };
+        Returns: { properties: number; bookings: number; contact_requests: number }[];
+      };
+      reorder_property_images: {
+        Args: { p_property_id: string; p_image_ids: string[] };
+        Returns: undefined;
+      };
     };
     Enums: {
       user_role: "user" | "agent" | "admin";

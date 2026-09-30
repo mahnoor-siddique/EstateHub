@@ -1,6 +1,5 @@
 /*
- * Sections of the /admin area. Only the dashboard exists so far; the others are placeholders for
- * the upcoming management pages and are shown as "coming soon" (not links) until they are built.
+ * Sections of the /admin area. A section with available: false is shown as "coming soon" (not a link).
  */
 
 export type AdminSectionId =
@@ -32,34 +31,34 @@ export const ADMIN_SECTIONS: readonly AdminSection[] = [
     label: "Properties",
     href: "/admin/properties",
     description: "Create, edit and retire listings, and manage their photos.",
-    available: false,
+    available: true,
   },
   {
     id: "agents",
     label: "Agents",
     href: "/admin/agents",
     description: "Manage the agent directory and profiles.",
-    available: false,
+    available: true,
   },
   {
     id: "bookings",
     label: "Bookings",
     href: "/admin/bookings",
     description: "Review viewing requests and update their status.",
-    available: false,
+    available: true,
   },
   {
     id: "contact-requests",
     label: "Contact Requests",
     href: "/admin/contact-requests",
     description: "Read and follow up on enquiries sent to agents.",
-    available: false,
+    available: true,
   },
   {
     id: "users",
     label: "Users",
     href: "/admin/users",
     description: "View accounts and manage their roles.",
-    available: false,
+    available: true,
   },
 ];

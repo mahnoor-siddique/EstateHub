@@ -14,7 +14,11 @@ for (const file of [".env.test.local", ".env.local"]) {
 
 export default defineConfig({
   resolve: {
-    alias: { "@": fileURLToPath(new URL("./", import.meta.url)) },
+    alias: {
+      "@": fileURLToPath(new URL("./", import.meta.url)),
+      // Next.js resolves "server-only" itself at build time; tests run on the server anyway.
+      "server-only": fileURLToPath(new URL("./node_modules/next/dist/compiled/server-only/empty.js", import.meta.url)),
+    },
   },
   test: {
     environment: "node",

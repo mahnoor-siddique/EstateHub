@@ -21,7 +21,8 @@ const itemClasses =
  * verified on the server by requireAdmin.
  */
 export function AdminSidebar({ admin }: { admin: AdminUser }) {
-  const pathname = usePathname();
+  // null outside the App Router (e.g. when rendered in tests); treat it as "no current page".
+  const pathname = usePathname() ?? "";
 
   return (
     <aside className="rounded-card border border-line bg-white p-4 shadow-card lg:sticky lg:top-28 lg:p-5">
@@ -54,12 +55,13 @@ export function AdminSidebar({ admin }: { admin: AdminUser }) {
                 </li>
               );
             }
-            const active = pathname === href;
+            // The dashboard is only active on /admin itself; sections also on their sub-pages.
+            const active = href === "/admin" ? pathname === href : pathname === href || pathname.startsWith(`${href}/`);
             return (
               <li key={id}>
                 <Link
                   href={href}
-                  aria-current={active ? "page" : undefined}
+                  aria-current={pathname === href ? "page" : active ? "true" : undefined}
                   className={cn(
                     itemClasses,
                     "transition-colors duration-200",

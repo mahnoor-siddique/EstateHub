@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { AdminSectionIcon } from "@/components/admin/AdminSectionIcon";
 import { displayName } from "@/components/auth/UserBadge";
 import { ADMIN_SECTIONS } from "@/lib/admin/navigation";
@@ -18,7 +19,7 @@ export async function generateMetadata(): Promise<Metadata> {
  */
 export default async function AdminDashboardPage() {
   const admin = await requireAdmin("/admin");
-  const upcoming = ADMIN_SECTIONS.filter((section) => !section.available);
+  const sections = ADMIN_SECTIONS.filter((section) => section.id !== "dashboard");
 
   return (
     <>
@@ -36,17 +37,35 @@ export default async function AdminDashboardPage() {
           Management areas
         </h2>
         <ul className="mt-5 grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
-          {upcoming.map(({ id, label, description }) => (
-            <li key={id} className="flex flex-col rounded-card border border-line bg-white p-5 shadow-card">
+          {sections.map(({ id, label, href, description, available }) => (
+            <li
+              key={id}
+              className={
+                available
+                  ? "relative flex flex-col rounded-card border border-line bg-white p-5 shadow-card transition-shadow hover:shadow-lift"
+                  : "flex flex-col rounded-card border border-line bg-white p-5 shadow-card"
+              }
+            >
               <div className="flex items-start justify-between gap-3">
                 <span className="grid size-11 place-items-center rounded-full bg-sand text-gold-strong">
                   <AdminSectionIcon id={id} className="size-5" />
                 </span>
-                <span className="rounded-full bg-sand px-2.5 py-1 text-[0.6875rem] font-semibold tracking-wide text-stone uppercase">
-                  Coming soon
-                </span>
+                {!available && (
+                  <span className="rounded-full bg-sand px-2.5 py-1 text-[0.6875rem] font-semibold tracking-wide text-stone uppercase">
+                    Coming soon
+                  </span>
+                )}
               </div>
-              <h3 className="mt-4 text-xl font-semibold">{label}</h3>
+              <h3 className="mt-4 text-xl font-semibold">
+                {available ? (
+                  // The link covers the whole card (after:inset-0) for a larger click target.
+                  <Link href={href} className="after:absolute after:inset-0 after:rounded-card hover:text-gold-strong">
+                    {label}
+                  </Link>
+                ) : (
+                  label
+                )}
+              </h3>
               <p className="mt-2 text-sm leading-relaxed text-stone">{description}</p>
             </li>
           ))}
