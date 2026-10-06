@@ -1,7 +1,6 @@
 /*
- * Checks for photos uploaded by admins, matching the property-images bucket's own limits
- * (supabase/migrations/20261001000000_property_images_bucket.sql): at most 5 MB, JPEG, PNG or
- * WebP. The browser-reported type is not trusted on its own: the file's first bytes must match it.
+ * Checks for photos uploaded by admins before they are stored in AWS S3: at most 5 MB, JPEG, PNG
+ * or WebP. The browser-reported type is not trusted on its own: the file's first bytes must match it.
  */
 
 export const IMAGE_MAX_BYTES = 5 * 1024 * 1024;

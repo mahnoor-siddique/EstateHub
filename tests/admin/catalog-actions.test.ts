@@ -8,10 +8,12 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 /*
  * The admin Server Actions (properties, property photos, agents) with the Supabase server client
- * replaced by a fake that records every query, Storage call and RPC. Each test controls who is
- * signed in (getClaims) and their profile role, and what the database answers. This checks the
- * actions' own authorization and validation, and exactly what they would send; the database's
- * RLS/Storage policies are checked separately against Postgres.
+ * replaced by a fake that records every query and RPC, and the AWS S3 client replaced by a fake
+ * that records every upload and delete. Each test controls who is signed in (getClaims) and their
+ * profile role, and what the database answers. This checks the actions' own authorization and
+ * validation, and exactly what they would send; the database's RLS policies are checked
+ * separately against Postgres. The fake Supabase client has no Storage API at all, so any attempt
+ * to use Supabase Storage for a file fails the test.
  */
 
 // ---------------------------------------------------------------------------
@@ -36,7 +38,7 @@ let rpcResults: Record<string, Result>;
 let uploadError: { name: string; message: string } | null;
 
 const queries: Query[] = [];
-const uploads: { bucket: string; path: string; file: File; options: Record<string, unknown> }[] = [];
+const uploads: { bucket: string; path: string; body: Buffer; options: Record<string, unknown> }[] = [];
 const removals: { bucket: string; paths: string[] }[] = [];
 const rpcs: { name: string; args: Record<string, unknown> }[] = [];
 
@@ -99,19 +101,27 @@ vi.mock("@/lib/supabase/server", () => ({
       rpcs.push({ name, args });
       return rpcResults[name] ?? ok(null);
     },
-    storage: {
-      from: (bucket: string) => ({
-        upload: async (path: string, file: File, options: Record<string, unknown>) => {
-          uploads.push({ bucket, path, file, options });
-          return { data: uploadError ? null : { path }, error: uploadError };
-        },
-        remove: async (paths: string[]) => {
-          removals.push({ bucket, paths });
-          return { data: [], error: null };
-        },
-      }),
-    },
   }),
+}));
+
+// Fake S3 client: the real command objects are built, only sending them is replaced.
+vi.mock("@/lib/aws/s3", () => ({
+  s3: {
+    send: async (command: { constructor: { name: string }; input: Record<string, unknown> }) => {
+      const { Bucket, Key, Body, Delete, ...options } = command.input;
+      if (command.constructor.name === "PutObjectCommand") {
+        if (uploadError) throw Object.assign(new Error(uploadError.message), { name: uploadError.name });
+        uploads.push({ bucket: Bucket as string, path: Key as string, body: Body as Buffer, options });
+        return {};
+      }
+      if (command.constructor.name === "DeleteObjectsCommand") {
+        const paths = (Delete as { Objects: { Key: string }[] }).Objects.map((object) => object.Key);
+        removals.push({ bucket: Bucket as string, paths });
+        return {};
+      }
+      throw new Error(`Unexpected S3 command: ${command.constructor.name}`);
+    },
+  },
 }));
 
 const revalidatePath = vi.fn();
@@ -130,7 +140,11 @@ const { createAgent, deleteAgent, updateAgent } = await import("@/lib/admin/agen
 // ---------------------------------------------------------------------------
 
 const PROJECT = "https://example-ref.supabase.co";
-const PUBLIC = `${PROJECT}/storage/v1/object/public/property-images`;
+const BUCKET = "estatehub-test-images";
+/** Where new uploads are served from: the S3 bucket. */
+const PUBLIC = `https://${BUCKET}.s3.eu-north-1.amazonaws.com`;
+/** Where photos uploaded before the move to S3 are still served from: Supabase Storage. */
+const LEGACY = `${PROJECT}/storage/v1/object/public/property-images`;
 const USER_ID = "7d1c2f0e-0000-4000-8000-000000000001";
 const PROPERTY_ID = "ba3d940c-b0d1-50dd-9fb1-44f62f2d2264";
 const NEW_PROPERTY_ID = "11111111-2222-4333-8444-555555555555";
@@ -210,6 +224,7 @@ const dataQueries = () => queries.filter((q) => q.table !== "profiles");
 beforeEach(() => {
   vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", PROJECT);
   vi.stubEnv("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY", "test-publishable-key");
+  vi.stubEnv("AWS_S3_BUCKET", BUCKET);
   claims = null;
   profileRole = null;
   handlers = {};
@@ -406,33 +421,49 @@ describe("property actions (admin)", () => {
   describe("delete", () => {
     const dependents = (bookings: number) =>
       ok([{ images: 2, bookings, active_bookings: bookings, contact_requests: 1 }]);
+    const fileA = `properties/${PROPERTY_ID}/0b9a1c52-1a2b-4c3d-8e9f-0a1b2c3d4e5f.webp`;
+    const fileB = `properties/${PROPERTY_ID}/1c0b2d63-2b3c-4d4e-9f0a-1b2c3d4e5f60.jpg`;
 
     beforeEach(() => {
       handlers["property_images.select"] = (q) =>
         q.filters.some(([op]) => op === "in")
           ? ok([]) // after the delete, no other row still uses these files
-          : ok([{ storage_path: "properties/p/a.webp" }, { storage_path: "properties/p/b.webp" }, { storage_path: null }]);
+          : ok([
+              { image_url: `${PUBLIC}/${fileA}` },
+              { image_url: `${PUBLIC}/${fileB}` },
+              { image_url: `${LEGACY}/property-1/main.webp` }, // still in Supabase Storage
+              { image_url: `${PUBLIC}/properties/${NEW_PROPERTY_ID}/0b9a1c52-1a2b-4c3d-8e9f-0a1b2c3d4e5f.webp` }, // another property's file
+              { image_url: "/images/properties/property-1/main.png" },
+            ]);
       handlers["properties.delete"] = () => ok([{ id: PROPERTY_ID }]);
     });
 
-    it("deletes a property with no bookings, then its photo files", async () => {
+    it("deletes a property with no bookings, then only the S3 files uploaded for it", async () => {
       rpcResults.admin_property_dependents = dependents(0);
       const result = await outcome(() => deleteProperty(idle, form({ propertyId: PROPERTY_ID, confirmedBookings: "0" })));
 
       expect(result).toEqual({ redirect: "/admin/properties?saved=deleted" });
       expect(rpcs).toEqual([{ name: "admin_property_dependents", args: { p_property_id: PROPERTY_ID } }]);
       expect(writes()).toEqual([expect.objectContaining({ table: "properties", op: "delete", filters: [["eq", "id", PROPERTY_ID]] })]);
-      expect(removals).toEqual([{ bucket: "property-images", paths: ["properties/p/a.webp", "properties/p/b.webp"] }]);
+      expect(removals).toEqual([{ bucket: BUCKET, paths: [fileA, fileB] }]);
+    });
+
+    it("leaves every file alone when the property only has photos in Supabase Storage", async () => {
+      rpcResults.admin_property_dependents = dependents(0);
+      handlers["property_images.select"] = () => ok([{ image_url: `${LEGACY}/property-1/main.webp` }]);
+      const result = await outcome(() => deleteProperty(idle, form({ propertyId: PROPERTY_ID, confirmedBookings: "0" })));
+      expect(result).toEqual({ redirect: "/admin/properties?saved=deleted" });
+      expect(removals).toEqual([]);
     });
 
     it("never deletes a file another photo row still uses", async () => {
       rpcResults.admin_property_dependents = dependents(0);
       handlers["property_images.select"] = (q) =>
         q.filters.some(([op]) => op === "in")
-          ? ok([{ storage_path: "properties/p/a.webp" }])
-          : ok([{ storage_path: "properties/p/a.webp" }, { storage_path: "properties/p/b.webp" }]);
+          ? ok([{ image_url: `${PUBLIC}/${fileA}` }])
+          : ok([{ image_url: `${PUBLIC}/${fileA}` }, { image_url: `${PUBLIC}/${fileB}` }]);
       await outcome(() => deleteProperty(idle, form({ propertyId: PROPERTY_ID, confirmedBookings: "0" })));
-      expect(removals).toEqual([{ bucket: "property-images", paths: ["properties/p/b.webp"] }]);
+      expect(removals).toEqual([{ bucket: BUCKET, paths: [fileB] }]);
     });
 
     it("requires the admin to acknowledge the exact number of viewing requests", async () => {
@@ -481,17 +512,18 @@ describe("property photo actions (admin)", () => {
     handlers["property_images.insert"] = () => ok(null);
   });
 
-  it("uploads a valid photo to the property's folder and appends it to the gallery", async () => {
+  it("uploads a valid photo to the property's S3 folder and appends it to the gallery", async () => {
     const result = await uploadPropertyImage(PROPERTY_ID, idle, form({ photo: png(), alt_text: " Front  of house ", label: "Exterior" }));
 
     expect(result).toEqual({ status: "success", message: "Photo uploaded." });
     expect(uploads).toHaveLength(1);
     const [upload] = uploads;
-    expect(upload.bucket).toBe("property-images");
+    expect(upload.bucket).toBe(BUCKET);
     const [folder, id, file] = upload.path.split("/");
     expect([folder, id]).toEqual(["properties", PROPERTY_ID]);
     expect(file).toMatch(UPLOADED);
-    expect(upload.options).toMatchObject({ contentType: "image/png", upsert: false });
+    expect(upload.options).toMatchObject({ ContentType: "image/png", IfNoneMatch: "*" }); // never overwrites
+    expect([...upload.body]).toEqual(PNG_BYTES);
 
     expect(writes()).toEqual([
       expect.objectContaining({
@@ -499,7 +531,7 @@ describe("property photo actions (admin)", () => {
         op: "insert",
         payload: {
           property_id: PROPERTY_ID,
-          storage_path: upload.path,
+          storage_path: null,
           image_url: `${PUBLIC}/${upload.path}`,
           alt_text: "Front of house",
           label: "Exterior",
@@ -545,8 +577,8 @@ describe("property photo actions (admin)", () => {
     expect(uploads).toEqual([]);
   });
 
-  it("reports a Storage rejection and saves no row", async () => {
-    uploadError = { name: "StorageApiError", message: "new row violates row-level security policy" };
+  it("reports an S3 rejection and saves no row", async () => {
+    uploadError = { name: "AccessDenied", message: "Access Denied" };
     const spy = vi.spyOn(console, "error").mockImplementation(() => {});
     expect(await uploadPropertyImage(PROPERTY_ID, idle, form({ photo: png(), alt_text: "Front" }))).toMatchObject({ status: "error" });
     spy.mockRestore();
@@ -557,7 +589,7 @@ describe("property photo actions (admin)", () => {
     handlers["property_images.insert"] = () => fail("42501");
     const result = await uploadPropertyImage(PROPERTY_ID, idle, form({ photo: png(), alt_text: "Front" }));
     expect(result).toMatchObject({ status: "error" });
-    expect(removals).toEqual([{ bucket: "property-images", paths: [uploads[0].path] }]);
+    expect(removals).toEqual([{ bucket: BUCKET, paths: [uploads[0].path] }]);
   });
 
   it("retries once with a fresh position when two uploads collide", async () => {
@@ -594,20 +626,33 @@ describe("property photo actions (admin)", () => {
     expect(rpcs).toEqual([]);
   });
 
-  it("deletes a photo row, then its file", async () => {
-    handlers["property_images.delete"] = () => ok([{ property_id: PROPERTY_ID, storage_path: "properties/p/a.webp" }]);
+  const uploadedFile = `properties/${PROPERTY_ID}/0b9a1c52-1a2b-4c3d-8e9f-0a1b2c3d4e5f.webp`;
+
+  it("deletes a photo row, then its S3 file", async () => {
+    handlers["property_images.delete"] = () => ok([{ property_id: PROPERTY_ID, image_url: `${PUBLIC}/${uploadedFile}` }]);
     handlers["property_images.select"] = () => ok([]); // no other row uses the file
     const result = await deletePropertyImage(idle, form({ imageId: IMAGE_ID }));
 
     expect(result).toEqual({ status: "success", message: "Photo deleted." });
     expect(writes()).toEqual([expect.objectContaining({ table: "property_images", op: "delete", filters: [["eq", "id", IMAGE_ID]] })]);
-    expect(removals).toEqual([{ bucket: "property-images", paths: ["properties/p/a.webp"] }]);
+    expect(removals).toEqual([{ bucket: BUCKET, paths: [uploadedFile] }]);
   });
 
   it("keeps a photo's file if another row still uses it", async () => {
-    handlers["property_images.delete"] = () => ok([{ property_id: PROPERTY_ID, storage_path: "property-1/main.webp" }]);
+    handlers["property_images.delete"] = () => ok([{ property_id: PROPERTY_ID, image_url: `${PUBLIC}/${uploadedFile}` }]);
     handlers["property_images.select"] = () => ok([{ id: IMAGE_ID_2 }]);
     await deletePropertyImage(idle, form({ imageId: IMAGE_ID }));
+    expect(removals).toEqual([]);
+  });
+
+  it.each([
+    ["a photo still in Supabase Storage", `${LEGACY}/property-1/main.webp`],
+    ["a file uploaded for another property", `${PUBLIC}/properties/${NEW_PROPERTY_ID}/0b9a1c52-1a2b-4c3d-8e9f-0a1b2c3d4e5f.webp`],
+    ["an S3 file /admin did not upload", `${PUBLIC}/properties/${PROPERTY_ID}/main.webp`],
+  ])("deletes the row but never the file of %s", async (_label, imageUrl) => {
+    handlers["property_images.delete"] = () => ok([{ property_id: PROPERTY_ID, image_url: imageUrl }]);
+    handlers["property_images.select"] = () => ok([]);
+    expect(await deletePropertyImage(idle, form({ imageId: IMAGE_ID }))).toEqual({ status: "success", message: "Photo deleted." });
     expect(removals).toEqual([]);
   });
 
@@ -625,7 +670,8 @@ describe("property photo actions (admin)", () => {
 describe("agent actions (admin)", () => {
   const NEW_AGENT_ID = "22222222-3333-4444-8555-666666666666";
   const managedPhoto = `${PUBLIC}/agents/${AGENT_ID}/0b9a1c52-1a2b-4c3d-8e9f-0a1b2c3d4e5f.webp`;
-  const seededPhoto = `${PUBLIC}/agents/sara-malik.webp`;
+  const seededPhoto = `${LEGACY}/agents/sara-malik.webp`; // still in Supabase Storage
+  const legacyManagedPhoto = `${LEGACY}/agents/${AGENT_ID}/0b9a1c52-1a2b-4c3d-8e9f-0a1b2c3d4e5f.webp`;
 
   beforeEach(() => signInAs("admin"));
 
@@ -638,12 +684,13 @@ describe("agent actions (admin)", () => {
     expect(uploads).toEqual([]);
   });
 
-  it("creates an agent with a photo stored under their own folder", async () => {
+  it("creates an agent with a photo stored under their own S3 folder", async () => {
     handlers["agents.insert"] = () => ok({ id: NEW_AGENT_ID });
     handlers["agents.update"] = () => ok(null);
     const result = await outcome(() => createAgent(idle, form({ ...agentFields, photo: png() })));
 
     expect(result).toEqual({ redirect: `/admin/agents/${NEW_AGENT_ID}?saved=created` });
+    expect(uploads[0].bucket).toBe(BUCKET);
     expect(uploads[0].path).toMatch(new RegExp(`^agents/${NEW_AGENT_ID}/[0-9a-f-]{36}\\.png$`));
     expect(writes()[1]).toMatchObject({
       table: "agents",
@@ -655,7 +702,7 @@ describe("agent actions (admin)", () => {
 
   it("still creates the agent, and says so, if the photo upload fails", async () => {
     handlers["agents.insert"] = () => ok({ id: NEW_AGENT_ID });
-    uploadError = { name: "StorageApiError", message: "denied" };
+    uploadError = { name: "AccessDenied", message: "denied" };
     const spy = vi.spyOn(console, "error").mockImplementation(() => {});
     const result = await outcome(() => createAgent(idle, form({ ...agentFields, photo: png() })));
     spy.mockRestore();
@@ -734,15 +781,20 @@ describe("agent actions (admin)", () => {
     await updateAgent(AGENT_ID, idle, form({ ...agentFields, photo: png() }));
 
     expect((writes()[0].payload as { profile_image: string }).profile_image).toBe(`${PUBLIC}/${uploads[0].path}`);
-    expect(removals).toEqual([{ bucket: "property-images", paths: [managedPhoto.slice(PUBLIC.length + 1)] }]);
+    expect(removals).toEqual([{ bucket: BUCKET, paths: [managedPhoto.slice(PUBLIC.length + 1)] }]);
   });
 
-  it("never deletes a seeded portrait file when replacing or removing it", async () => {
-    handlers["agents.select"] = () => ok({ profile_image: seededPhoto });
+  it.each([
+    ["a seeded portrait", seededPhoto],
+    ["a portrait /admin uploaded to Supabase Storage", legacyManagedPhoto],
+  ])("never deletes the Supabase Storage file of %s when replacing or removing it", async (_label, photo) => {
+    handlers["agents.select"] = () => ok({ profile_image: photo });
     handlers["agents.update"] = () => ok([{ id: AGENT_ID }]);
     await updateAgent(AGENT_ID, idle, form({ ...agentFields, removePhoto: "on" }));
-
     expect((writes()[0].payload as { profile_image: null }).profile_image).toBeNull();
+
+    await updateAgent(AGENT_ID, idle, form({ ...agentFields, photo: png() }));
+    expect((writes()[1].payload as { profile_image: string }).profile_image).toBe(`${PUBLIC}/${uploads[0].path}`);
     expect(removals).toEqual([]);
   });
 
@@ -751,7 +803,7 @@ describe("agent actions (admin)", () => {
     handlers["agents.update"] = () => fail("42501");
     const result = await updateAgent(AGENT_ID, idle, form({ ...agentFields, photo: png() }));
     expect(result).toMatchObject({ status: "error" });
-    expect(removals).toEqual([{ bucket: "property-images", paths: [uploads[0].path] }]);
+    expect(removals).toEqual([{ bucket: BUCKET, paths: [uploads[0].path] }]);
   });
 
   it("rejects invalid agent data on edit without writing", async () => {
@@ -767,7 +819,14 @@ describe("agent actions (admin)", () => {
 
     expect(result).toEqual({ redirect: "/admin/agents?saved=deleted" });
     expect(writes()).toEqual([expect.objectContaining({ table: "agents", op: "delete", filters: [["eq", "id", AGENT_ID]] })]);
-    expect(removals).toEqual([{ bucket: "property-images", paths: [managedPhoto.slice(PUBLIC.length + 1)] }]);
+    expect(removals).toEqual([{ bucket: BUCKET, paths: [managedPhoto.slice(PUBLIC.length + 1)] }]);
+  });
+
+  it("deletes an agent whose portrait is still in Supabase Storage without touching the file", async () => {
+    rpcResults.admin_agent_dependents = ok([{ properties: 0, bookings: 0, contact_requests: 0 }]);
+    handlers["agents.delete"] = () => ok([{ id: AGENT_ID, profile_image: legacyManagedPhoto }]);
+    expect(await outcome(() => deleteAgent(idle, form({ agentId: AGENT_ID })))).toEqual({ redirect: "/admin/agents?saved=deleted" });
+    expect(removals).toEqual([]);
   });
 
   it("refuses to delete an agent who still has properties", async () => {

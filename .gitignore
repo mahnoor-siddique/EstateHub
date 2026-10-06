@@ -44,3 +44,10 @@ next-env.d.ts
 
 # local scratch output (e.g. optimized images before upload)
 /tmp/
+
+# Terraform
+terraform/.terraform/
+terraform/*.tfstate
+terraform/*.tfstate.*
+terraform/crash.log
+terraform/crash.*.log

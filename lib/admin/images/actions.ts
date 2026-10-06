@@ -2,18 +2,18 @@
 
 import { revalidatePath } from "next/cache";
 import { adminWriteErrorMessage } from "@/lib/admin/errors";
-import { propertyImagePath, removeImages, uploadImage } from "@/lib/admin/storage";
+import { managedPropertyImagePath, propertyImagePath, removeImages, uploadImage } from "@/lib/admin/storage";
 import type { AdminFormState } from "@/lib/admin/types";
 import { requireAdmin } from "@/lib/auth/session";
 import { isUuid } from "@/lib/queries/supabase/shared";
 import { createClient } from "@/lib/supabase/server";
-import { propertyImageUrl } from "@/lib/supabase/storage";
 import { validateImageFile, validatePhotoText } from "@/lib/validations/image-upload";
 
 /*
  * Server Actions for a property's photos on /admin/properties/[id]. Admin-only (requireAdmin, then
- * the database/Storage policies again). Files go to the existing property-images bucket; each
- * property_images row records the file's storage_path and its public URL, like the seeded photos.
+ * the database policies again). Files go to the AWS S3 image bucket; each property_images row
+ * records the file's S3 URL in image_url and leaves storage_path null (that column is only set on
+ * older photos still in Supabase Storage, whose files these actions never touch).
  */
 
 type PhotoField = "photo" | "alt_text" | "label";
@@ -53,7 +53,8 @@ export async function uploadPropertyImage(propertyId: string, _prev: State, form
   }
 
   const path = propertyImagePath(propertyId, file.image);
-  if (!(await uploadImage(supabase, path, file.image))) {
+  const imageUrl = await uploadImage(path, file.image);
+  if (!imageUrl) {
     return { status: "error", message: "We couldn't upload the photo. Please try again.", values };
   }
 
@@ -64,8 +65,8 @@ export async function uploadPropertyImage(propertyId: string, _prev: State, form
     if (sortOrder === null) break;
     ({ error } = await supabase.from("property_images").insert({
       property_id: propertyId,
-      image_url: propertyImageUrl(path),
-      storage_path: path,
+      image_url: imageUrl,
+      storage_path: null,
       ...text.data,
       sort_order: sortOrder,
     }));
@@ -73,7 +74,7 @@ export async function uploadPropertyImage(propertyId: string, _prev: State, form
   }
 
   if (error) {
-    await removeImages(supabase, [path]); // don't leave an unreferenced file behind
+    await removeImages([path]); // don't leave an unreferenced file behind
     return { status: "error", message: adminWriteErrorMessage(error, "save the photo"), values };
   }
 
@@ -139,7 +140,7 @@ export async function movePropertyImage(_prev: State, formData: FormData): Promi
   return { status: "success", message: "Photo order saved." };
 }
 
-/** Deletes a photo's row, then its file (unless another row still uses that file). */
+/** Deletes a photo's row, then its S3 file (unless another row still uses that file). */
 export async function deletePropertyImage(_prev: State, formData: FormData): Promise<State> {
   await requireAdmin("/admin/properties");
   const imageId = String(formData.get("imageId") ?? "");
@@ -150,14 +151,15 @@ export async function deletePropertyImage(_prev: State, formData: FormData): Pro
     .from("property_images")
     .delete()
     .eq("id", imageId)
-    .select("property_id, storage_path");
+    .select("property_id, image_url");
   if (error) return { status: "error", message: adminWriteErrorMessage(error, "delete the photo") };
   if (data.length === 0) return { status: "error", message: "This photo no longer exists." };
 
-  const { property_id: propertyId, storage_path: path } = data[0];
+  const { property_id: propertyId, image_url: imageUrl } = data[0];
+  const path = managedPropertyImagePath(propertyId, imageUrl);
   if (path) {
-    const stillUsed = await supabase.from("property_images").select("id").eq("storage_path", path).limit(1);
-    if (!stillUsed.error && stillUsed.data.length === 0) await removeImages(supabase, [path]);
+    const stillUsed = await supabase.from("property_images").select("id").eq("image_url", imageUrl).limit(1);
+    if (!stillUsed.error && stillUsed.data.length === 0) await removeImages([path]);
   }
 
   revalidateProperty(propertyId);

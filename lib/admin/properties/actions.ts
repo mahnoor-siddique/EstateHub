@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { adminWriteErrorMessage, formValues } from "@/lib/admin/errors";
 import { getPropertyDependents } from "@/lib/admin/queries";
-import { removeImages } from "@/lib/admin/storage";
+import { managedPropertyImagePath, removeImages } from "@/lib/admin/storage";
 import type { AdminFormState } from "@/lib/admin/types";
 import { requireAdmin } from "@/lib/auth/session";
 import { isUuid } from "@/lib/queries/supabase/shared";
@@ -97,8 +97,9 @@ export async function updatePropertyStatus(_prev: State, formData: FormData): Pr
  * Deletes a property. Following the schema, its photos and viewing requests are deleted with it
  * (on delete cascade) and its enquiries keep their message but lose the property link. When it
  * has viewing requests, the admin must have confirmed exactly how many — so a request that
- * arrived after the dialog opened is never deleted without being seen. Photo files are removed
- * from Storage only after the rows are gone, and only if no other photo row still uses them.
+ * arrived after the dialog opened is never deleted without being seen. Photo files that /admin
+ * uploaded to S3 are removed only after the rows are gone, and only if no other photo row still
+ * uses them; older photos still in Supabase Storage keep their files.
  */
 export async function deleteProperty(_prev: State, formData: FormData): Promise<State> {
   await requireAdmin("/admin/properties");
@@ -118,19 +119,22 @@ export async function deleteProperty(_prev: State, formData: FormData): Promise<
   }
 
   const supabase = await createClient();
-  const images = await supabase.from("property_images").select("storage_path").eq("property_id", propertyId);
+  const images = await supabase.from("property_images").select("image_url").eq("property_id", propertyId);
   if (images.error) return { status: "error", message: adminWriteErrorMessage(images.error, "delete the property") };
 
   const { data, error } = await supabase.from("properties").delete().eq("id", propertyId).select("id");
   if (error) return { status: "error", message: adminWriteErrorMessage(error, "delete the property") };
   if (data.length === 0) return { status: "error", message: "This property no longer exists, or you can't delete it." };
 
-  const paths = images.data.map((row) => row.storage_path).filter((path): path is string => Boolean(path));
-  if (paths.length > 0) {
-    const stillUsed = await supabase.from("property_images").select("storage_path").in("storage_path", paths);
-    const keep = new Set((stillUsed.data ?? []).map((row) => row.storage_path));
+  const urls = images.data.map((row) => row.image_url).filter((url) => managedPropertyImagePath(propertyId, url));
+  if (urls.length > 0) {
+    const stillUsed = await supabase.from("property_images").select("image_url").in("image_url", urls);
+    const keep = new Set((stillUsed.data ?? []).map((row) => row.image_url));
     // If that check fails, keep every file: a stray file is harmless, a missing one is not.
-    if (!stillUsed.error) await removeImages(supabase, paths.filter((path) => !keep.has(path)));
+    if (!stillUsed.error) {
+      const paths = urls.filter((url) => !keep.has(url)).map((url) => managedPropertyImagePath(propertyId, url));
+      await removeImages(paths.filter((path): path is string => path !== null));
+    }
   }
 
   revalidateCatalog();

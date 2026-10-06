@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import nextConfig from "@/next.config";
-import { managedAgentImagePath } from "@/lib/admin/storage";
+import { managedAgentImagePath, managedPropertyImagePath } from "@/lib/admin/storage";
 import { validateAgent } from "@/lib/validations/admin-agent";
 import { validateProperty } from "@/lib/validations/admin-property";
 import {
@@ -270,23 +270,51 @@ describe("validatePhotoText", () => {
   });
 });
 
-describe("managedAgentImagePath", () => {
+describe("managed S3 image paths", () => {
   const PROJECT = "https://example-ref.supabase.co";
+  const BUCKET = "estatehub-test-images";
   beforeEach(() => {
     vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", PROJECT);
     vi.stubEnv("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY", "test-key");
+    vi.stubEnv("AWS_S3_BUCKET", BUCKET);
     return () => vi.unstubAllEnvs();
   });
-  const base = `${PROJECT}/storage/v1/object/public/property-images`;
+  const base = `https://${BUCKET}.s3.eu-north-1.amazonaws.com`;
+  const supabase = `${PROJECT}/storage/v1/object/public/property-images`;
   const uploaded = "0b9a1c52-1a2b-4c3d-8e9f-0a1b2c3d4e5f.webp";
+  const PROPERTY_ID = "ba3d940c-b0d1-50dd-9fb1-44f62f2d2264";
 
-  it("recognises only portraits /admin uploaded for this agent", () => {
+  it("recognises only portraits /admin uploaded to S3 for this agent", () => {
     expect(managedAgentImagePath(AGENT_ID, `${base}/agents/${AGENT_ID}/${uploaded}`)).toBe(`agents/${AGENT_ID}/${uploaded}`);
-    // Seeded portrait, another agent's folder, another site, path tricks, nothing:
+    // Other S3 file, another agent's folder, another site or bucket, path tricks, nothing:
     expect(managedAgentImagePath(AGENT_ID, `${base}/agents/sara-malik.webp`)).toBeNull();
     expect(managedAgentImagePath(AGENT_ID, `${base}/agents/08b56262-64ee-5f94-ad69-a602daed5be9/${uploaded}`)).toBeNull();
     expect(managedAgentImagePath(AGENT_ID, `https://evil.example/agents/${AGENT_ID}/${uploaded}`)).toBeNull();
+    expect(managedAgentImagePath(AGENT_ID, `https://other-bucket.s3.eu-north-1.amazonaws.com/agents/${AGENT_ID}/${uploaded}`)).toBeNull();
     expect(managedAgentImagePath(AGENT_ID, `${base}/agents/${AGENT_ID}/../property-1/main.webp`)).toBeNull();
+    expect(managedAgentImagePath(AGENT_ID, `${base}/agents/${AGENT_ID}/%2E%2E/${uploaded}`)).toBeNull();
     expect(managedAgentImagePath(AGENT_ID, null)).toBeNull();
+  });
+
+  it("never treats a Supabase Storage portrait as deletable, seeded or uploaded", () => {
+    expect(managedAgentImagePath(AGENT_ID, `${supabase}/agents/sara-malik.webp`)).toBeNull();
+    expect(managedAgentImagePath(AGENT_ID, `${supabase}/agents/${AGENT_ID}/${uploaded}`)).toBeNull();
+  });
+
+  it("recognises only listing photos /admin uploaded to S3 for this property", () => {
+    expect(managedPropertyImagePath(PROPERTY_ID, `${base}/properties/${PROPERTY_ID}/${uploaded}`)).toBe(
+      `properties/${PROPERTY_ID}/${uploaded}`,
+    );
+    expect(managedPropertyImagePath(PROPERTY_ID, `${base}/properties/11111111-2222-4333-8444-555555555555/${uploaded}`)).toBeNull();
+    expect(managedPropertyImagePath(PROPERTY_ID, `${base}/properties/${PROPERTY_ID}/main.webp`)).toBeNull();
+    expect(managedPropertyImagePath(PROPERTY_ID, `${base}/agents/${PROPERTY_ID}/${uploaded}`)).toBeNull();
+    expect(managedPropertyImagePath(PROPERTY_ID, `${supabase}/property-1/main.webp`)).toBeNull();
+    expect(managedPropertyImagePath(PROPERTY_ID, `${supabase}/properties/${PROPERTY_ID}/${uploaded}`)).toBeNull();
+    expect(managedPropertyImagePath(PROPERTY_ID, "/images/properties/property-1/main.png")).toBeNull();
+  });
+
+  it("recognises nothing when the bucket is not configured", () => {
+    vi.stubEnv("AWS_S3_BUCKET", "");
+    expect(managedAgentImagePath(AGENT_ID, `${base}/agents/${AGENT_ID}/${uploaded}`)).toBeNull();
   });
 });

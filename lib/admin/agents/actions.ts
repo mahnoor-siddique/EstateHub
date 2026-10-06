@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { adminWriteErrorMessage, formValues } from "@/lib/admin/errors";
 import { getAgentDependents } from "@/lib/admin/queries";
-import { agentImagePath, agentImageUrl, managedAgentImagePath, removeImages, uploadImage } from "@/lib/admin/storage";
+import { agentImagePath, managedAgentImagePath, removeImages, uploadImage } from "@/lib/admin/storage";
 import type { AdminFormState } from "@/lib/admin/types";
 import { requireAdmin } from "@/lib/auth/session";
 import { isUuid } from "@/lib/queries/supabase/shared";
@@ -13,9 +13,9 @@ import { validateAgent, type AgentField } from "@/lib/validations/admin-agent";
 import { isEmptyFile, validateImageFile, type ValidImage } from "@/lib/validations/image-upload";
 
 /*
- * Server Actions behind /admin/agents. Admin-only: requireAdmin first, then the database and
- * Storage policies check every write again. Portraits go to the existing property-images bucket
- * under agents/<agent id>/, and agents.profile_image stores the public URL (as for seeded agents).
+ * Server Actions behind /admin/agents. Admin-only: requireAdmin first, then the database policies
+ * check every write again. Portraits go to the AWS S3 image bucket under agents/<agent id>/, and
+ * agents.profile_image stores the S3 URL. Older portraits still in Supabase Storage are never deleted.
  */
 
 type State = AdminFormState<AgentField | "photo">;
@@ -54,11 +54,11 @@ export async function createAgent(_prev: State, formData: FormData): Promise<Sta
   let photoFailed = false;
   if (photo.image) {
     const path = agentImagePath(data.id, photo.image);
-    const uploaded = await uploadImage(supabase, path, photo.image);
+    const imageUrl = await uploadImage(path, photo.image);
     const saved =
-      uploaded &&
-      !(await supabase.from("agents").update({ profile_image: agentImageUrl(path) }).eq("id", data.id)).error;
-    if (uploaded && !saved) await removeImages(supabase, [path]);
+      imageUrl !== null &&
+      !(await supabase.from("agents").update({ profile_image: imageUrl }).eq("id", data.id)).error;
+    if (imageUrl && !saved) await removeImages([path]);
     photoFailed = !saved;
   }
 
@@ -90,10 +90,11 @@ export async function updateAgent(agentId: string, _prev: State, formData: FormD
   let newPath: string | null = null;
   if (photo.image) {
     newPath = agentImagePath(agentId, photo.image);
-    if (!(await uploadImage(supabase, newPath, photo.image))) {
+    const imageUrl = await uploadImage(newPath, photo.image);
+    if (!imageUrl) {
       return { status: "error", fieldErrors: { photo: "We couldn't upload the photo. Please try again." }, values };
     }
-    profileImage = agentImageUrl(newPath);
+    profileImage = imageUrl;
   } else if (formData.get("removePhoto") === "on") {
     profileImage = null;
   }
@@ -104,7 +105,7 @@ export async function updateAgent(agentId: string, _prev: State, formData: FormD
     .eq("id", agentId)
     .select("id");
   if (error || data.length === 0) {
-    if (newPath) await removeImages(supabase, [newPath]);
+    if (newPath) await removeImages([newPath]);
     return {
       status: "error",
       message: error ? adminWriteErrorMessage(error, "save the changes") : "This agent no longer exists.",
@@ -114,7 +115,7 @@ export async function updateAgent(agentId: string, _prev: State, formData: FormD
 
   // Remove the previous portrait file only if /admin uploaded it for this agent.
   const oldPath = profileImage !== oldImage ? managedAgentImagePath(agentId, oldImage) : null;
-  if (oldPath) await removeImages(supabase, [oldPath]);
+  if (oldPath) await removeImages([oldPath]);
 
   revalidateCatalog();
   return { status: "success", message: "Changes saved." };
@@ -155,7 +156,7 @@ export async function deleteAgent(_prev: State, formData: FormData): Promise<Sta
   if (data.length === 0) return { status: "error", message: "This agent no longer exists, or you can't delete it." };
 
   const photoPath = managedAgentImagePath(agentId, data[0].profile_image);
-  if (photoPath) await removeImages(supabase, [photoPath]);
+  if (photoPath) await removeImages([photoPath]);
 
   revalidateCatalog();
   redirect("/admin/agents?saved=deleted");

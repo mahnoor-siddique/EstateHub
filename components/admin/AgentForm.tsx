@@ -20,7 +20,7 @@ const initialState: State = { status: "idle" };
 /**
  * Add/edit form for an agent, including their profile photo. Posts to a Server Action that
  * validates everything (the photo's real file type included) and stores the photo in the
- * existing property-images bucket.
+ * AWS S3 image bucket.
  */
 export function AgentForm({
   action,

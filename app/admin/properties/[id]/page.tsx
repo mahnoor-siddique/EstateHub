@@ -60,7 +60,7 @@ export default async function EditPropertyPage({ params, searchParams }: PagePro
       <AdminSection
         id="property-photos-heading"
         title="Photos"
-        description="Stored in the property-images bucket. The first photo is the cover on listing cards."
+        description="New photos are stored in AWS S3. The first photo is the cover on listing cards."
       >
         <PropertyImageManager images={property.images} uploadAction={uploadPropertyImage.bind(null, property.id)} />
       </AdminSection>

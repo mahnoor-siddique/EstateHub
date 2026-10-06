@@ -9,6 +9,7 @@ const PROJECT = "https://example-ref.supabase.co";
 beforeEach(() => {
   vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", PROJECT);
   vi.stubEnv("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY", "test-publishable-key");
+  vi.stubEnv("AWS_S3_BUCKET", "estatehub-test-images");
   return () => vi.unstubAllEnvs();
 });
 
@@ -76,20 +77,34 @@ describe("toPropertyPhoto", () => {
 });
 
 describe("next.config images.remotePatterns", () => {
-  it("allows only this project's public property-images bucket", async () => {
+  it("allows only this project's Supabase property-images bucket and the S3 image bucket", async () => {
     vi.resetModules();
     const { default: config } = await import("@/next.config");
     const patterns = config.images?.remotePatterns ?? [];
-    expect(patterns).toHaveLength(1);
-    const pattern = patterns[0] as URL;
-    expect(pattern).toBeInstanceOf(URL);
-    expect(pattern.protocol).toBe("https:");
-    expect(pattern.hostname).toBe("example-ref.supabase.co");
-    expect(pattern.pathname).toBe("/storage/v1/object/public/property-images/**");
+    expect(patterns).toHaveLength(2);
+    const [supabase, s3] = patterns as URL[];
+    expect(supabase).toBeInstanceOf(URL);
+    expect(supabase.protocol).toBe("https:");
+    expect(supabase.hostname).toBe("example-ref.supabase.co");
+    expect(supabase.pathname).toBe("/storage/v1/object/public/property-images/**");
+    expect(s3).toBeInstanceOf(URL);
+    expect(s3.protocol).toBe("https:");
+    expect(s3.hostname).toBe("estatehub-test-images.s3.eu-north-1.amazonaws.com");
+    expect(s3.pathname).toBe("/**");
   });
 
-  it("allows no remote images when the Supabase URL is missing", async () => {
+  it("allows only the S3 image bucket when the Supabase URL is missing", async () => {
     vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "");
+    vi.resetModules();
+    const { default: config } = await import("@/next.config");
+    expect((config.images?.remotePatterns ?? []).map((pattern) => (pattern as URL).hostname)).toEqual([
+      "estatehub-test-images.s3.eu-north-1.amazonaws.com",
+    ]);
+  });
+
+  it("allows no remote images when neither bucket is configured", async () => {
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "");
+    vi.stubEnv("AWS_S3_BUCKET", "");
     vi.resetModules();
     const { default: config } = await import("@/next.config");
     expect(config.images?.remotePatterns).toEqual([]);
