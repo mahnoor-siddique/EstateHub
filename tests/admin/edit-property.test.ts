@@ -120,8 +120,8 @@ function storedRow(overrides: Record<string, unknown> = {}) {
     created_at: "2026-08-01T00:00:00+00:00",
     updated_at: "2026-08-01T00:00:00+00:00",
     property_images: [
-      { id: "d849e223-cf59-5453-bc1d-8efc38b32ade", image_url: "u", storage_path: "property-1/main.webp", alt_text: "Front of the villa", label: "Exterior", sort_order: 0 },
-      { id: "a65cd623-58f1-5165-ac3c-33095318820e", image_url: "u", storage_path: "property-1/living-room.webp", alt_text: "Living room", label: null, sort_order: 1 },
+      { id: "d849e223-cf59-5453-bc1d-8efc38b32ade", image_url: "u", alt_text: "Front of the villa", label: "Exterior", sort_order: 0 },
+      { id: "a65cd623-58f1-5165-ac3c-33095318820e", image_url: "u", alt_text: "Living room", label: null, sort_order: 1 },
     ],
     ...overrides,
   };

@@ -34,7 +34,6 @@ export type AdminPropertyRow = {
 export type AdminPropertyImage = {
   id: string;
   src: string;
-  storagePath: string | null;
   altText: string;
   label: string | null;
   sortOrder: number;

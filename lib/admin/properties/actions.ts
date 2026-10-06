@@ -99,7 +99,7 @@ export async function updatePropertyStatus(_prev: State, formData: FormData): Pr
  * has viewing requests, the admin must have confirmed exactly how many — so a request that
  * arrived after the dialog opened is never deleted without being seen. Photo files that /admin
  * uploaded to S3 are removed only after the rows are gone, and only if no other photo row still
- * uses them; older photos still in Supabase Storage keep their files.
+ * uses them.
  */
 export async function deleteProperty(_prev: State, formData: FormData): Promise<State> {
   await requireAdmin("/admin/properties");

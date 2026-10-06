@@ -1,5 +1,4 @@
 import type { PostgrestError } from "@supabase/supabase-js";
-import { propertyImageUrl } from "@/lib/supabase/storage";
 import type { TableRow } from "@/types/database";
 import type { Agent } from "@/types/agent";
 import type { Amenity, PropertyDetail, PropertyPhoto, PropertySummary } from "@/types/property";
@@ -43,7 +42,7 @@ export const AMENITY_COLUMNS = {
 } as const satisfies Record<Amenity, keyof TableRow<"properties">>;
 
 // Select lists. Kept as literal strings so supabase-js can infer the result types from them.
-export const IMAGE_COLUMNS = "image_url, storage_path, alt_text, label, sort_order";
+export const IMAGE_COLUMNS = "image_url, alt_text, label, sort_order";
 
 const PROPERTY_CORE_COLUMNS = "id, title, property_type, listing_type, price, city, area_location";
 const PROPERTY_SIZE_COLUMNS = "bedrooms, bathrooms, area, area_unit, created_at";
@@ -56,10 +55,7 @@ export const PROPERTY_DETAIL_COLUMNS = `${PROPERTY_SUMMARY_COLUMNS}, description
 
 export const AGENT_COLUMNS = "id, full_name, title, bio, agency_name, profile_image";
 
-type ImageRow = Pick<
-  TableRow<"property_images">,
-  "image_url" | "storage_path" | "alt_text" | "label" | "sort_order"
->;
+type ImageRow = Pick<TableRow<"property_images">, "image_url" | "alt_text" | "label" | "sort_order">;
 type AmenityColumn = (typeof AMENITY_COLUMNS)[Amenity];
 
 type PropertySummaryRow = Pick<
@@ -87,14 +83,9 @@ export type AgentRow = Pick<
   "id" | "full_name" | "title" | "bio" | "agency_name" | "profile_image"
 >;
 
-/**
- * A photo row as the UI needs it. Supabase Storage is the source of truth: when the row has a
- * storage_path, the URL is built from it for the current project. image_url is only the fallback
- * for rows without one (e.g. photos not yet moved to Storage).
- */
+/** A photo row as the UI needs it. image_url is the photo's public URL in the AWS S3 image bucket. */
 export function toPropertyPhoto(row: ImageRow): PropertyPhoto {
-  const src = row.storage_path ? propertyImageUrl(row.storage_path) : row.image_url;
-  return { src, alt: row.alt_text, label: row.label ?? "" };
+  return { src: row.image_url, alt: row.alt_text, label: row.label ?? "" };
 }
 
 export function toPropertySummary(row: PropertySummaryRow): PropertySummary {

@@ -15,7 +15,7 @@ import { isEmptyFile, validateImageFile, type ValidImage } from "@/lib/validatio
 /*
  * Server Actions behind /admin/agents. Admin-only: requireAdmin first, then the database policies
  * check every write again. Portraits go to the AWS S3 image bucket under agents/<agent id>/, and
- * agents.profile_image stores the S3 URL. Older portraits still in Supabase Storage are never deleted.
+ * agents.profile_image stores the S3 URL.
  */
 
 type State = AdminFormState<AgentField | "photo">;

@@ -12,8 +12,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
  * that records every upload and delete. Each test controls who is signed in (getClaims) and their
  * profile role, and what the database answers. This checks the actions' own authorization and
  * validation, and exactly what they would send; the database's RLS policies are checked
- * separately against Postgres. The fake Supabase client has no Storage API at all, so any attempt
- * to use Supabase Storage for a file fails the test.
+ * separately against Postgres. The fake Supabase client has no Storage API at all: files only
+ * ever go to S3.
  */
 
 // ---------------------------------------------------------------------------
@@ -143,7 +143,7 @@ const PROJECT = "https://example-ref.supabase.co";
 const BUCKET = "estatehub-test-images";
 /** Where new uploads are served from: the S3 bucket. */
 const PUBLIC = `https://${BUCKET}.s3.eu-north-1.amazonaws.com`;
-/** Where photos uploaded before the move to S3 are still served from: Supabase Storage. */
+/** An old Supabase Storage URL, from before the move to S3. Never treated as an S3 file. */
 const LEGACY = `${PROJECT}/storage/v1/object/public/property-images`;
 const USER_ID = "7d1c2f0e-0000-4000-8000-000000000001";
 const PROPERTY_ID = "ba3d940c-b0d1-50dd-9fb1-44f62f2d2264";
@@ -431,7 +431,7 @@ describe("property actions (admin)", () => {
           : ok([
               { image_url: `${PUBLIC}/${fileA}` },
               { image_url: `${PUBLIC}/${fileB}` },
-              { image_url: `${LEGACY}/property-1/main.webp` }, // still in Supabase Storage
+              { image_url: `${LEGACY}/property-1/main.webp` }, // not an S3 URL
               { image_url: `${PUBLIC}/properties/${NEW_PROPERTY_ID}/0b9a1c52-1a2b-4c3d-8e9f-0a1b2c3d4e5f.webp` }, // another property's file
               { image_url: "/images/properties/property-1/main.png" },
             ]);
@@ -448,7 +448,7 @@ describe("property actions (admin)", () => {
       expect(removals).toEqual([{ bucket: BUCKET, paths: [fileA, fileB] }]);
     });
 
-    it("leaves every file alone when the property only has photos in Supabase Storage", async () => {
+    it("leaves every file alone when none of the property's photos is an S3 upload", async () => {
       rpcResults.admin_property_dependents = dependents(0);
       handlers["property_images.select"] = () => ok([{ image_url: `${LEGACY}/property-1/main.webp` }]);
       const result = await outcome(() => deleteProperty(idle, form({ propertyId: PROPERTY_ID, confirmedBookings: "0" })));
@@ -531,7 +531,6 @@ describe("property photo actions (admin)", () => {
         op: "insert",
         payload: {
           property_id: PROPERTY_ID,
-          storage_path: null,
           image_url: `${PUBLIC}/${upload.path}`,
           alt_text: "Front of house",
           label: "Exterior",
@@ -646,7 +645,7 @@ describe("property photo actions (admin)", () => {
   });
 
   it.each([
-    ["a photo still in Supabase Storage", `${LEGACY}/property-1/main.webp`],
+    ["a photo with an old Supabase Storage URL", `${LEGACY}/property-1/main.webp`],
     ["a file uploaded for another property", `${PUBLIC}/properties/${NEW_PROPERTY_ID}/0b9a1c52-1a2b-4c3d-8e9f-0a1b2c3d4e5f.webp`],
     ["an S3 file /admin did not upload", `${PUBLIC}/properties/${PROPERTY_ID}/main.webp`],
   ])("deletes the row but never the file of %s", async (_label, imageUrl) => {
@@ -670,7 +669,7 @@ describe("property photo actions (admin)", () => {
 describe("agent actions (admin)", () => {
   const NEW_AGENT_ID = "22222222-3333-4444-8555-666666666666";
   const managedPhoto = `${PUBLIC}/agents/${AGENT_ID}/0b9a1c52-1a2b-4c3d-8e9f-0a1b2c3d4e5f.webp`;
-  const seededPhoto = `${LEGACY}/agents/sara-malik.webp`; // still in Supabase Storage
+  const seededPhoto = `${LEGACY}/agents/sara-malik.webp`; // not an S3 URL
   const legacyManagedPhoto = `${LEGACY}/agents/${AGENT_ID}/0b9a1c52-1a2b-4c3d-8e9f-0a1b2c3d4e5f.webp`;
 
   beforeEach(() => signInAs("admin"));
@@ -786,8 +785,8 @@ describe("agent actions (admin)", () => {
 
   it.each([
     ["a seeded portrait", seededPhoto],
-    ["a portrait /admin uploaded to Supabase Storage", legacyManagedPhoto],
-  ])("never deletes the Supabase Storage file of %s when replacing or removing it", async (_label, photo) => {
+    ["an old Supabase Storage upload", legacyManagedPhoto],
+  ])("deletes no S3 file for %s when replacing or removing it", async (_label, photo) => {
     handlers["agents.select"] = () => ok({ profile_image: photo });
     handlers["agents.update"] = () => ok([{ id: AGENT_ID }]);
     await updateAgent(AGENT_ID, idle, form({ ...agentFields, removePhoto: "on" }));
@@ -822,7 +821,7 @@ describe("agent actions (admin)", () => {
     expect(removals).toEqual([{ bucket: BUCKET, paths: [managedPhoto.slice(PUBLIC.length + 1)] }]);
   });
 
-  it("deletes an agent whose portrait is still in Supabase Storage without touching the file", async () => {
+  it("deletes an agent whose portrait is not an S3 upload without deleting any file", async () => {
     rpcResults.admin_agent_dependents = ok([{ properties: 0, bookings: 0, contact_requests: 0 }]);
     handlers["agents.delete"] = () => ok([{ id: AGENT_ID, profile_image: legacyManagedPhoto }]);
     expect(await outcome(() => deleteAgent(idle, form({ agentId: AGENT_ID })))).toEqual({ redirect: "/admin/agents?saved=deleted" });

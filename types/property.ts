@@ -18,8 +18,7 @@ export type PropertyType = (typeof PROPERTY_TYPES)[number];
 export type ListingType = (typeof LISTING_TYPES)[number];
 export type Amenity = (typeof AMENITIES)[number];
 
-/** One listing photo. `src` is its public URL: the Supabase Storage URL (from storage_path), or
- *  the row's image_url as a fallback. */
+/** One listing photo. `src` is its public URL in the AWS S3 image bucket (the row's image_url). */
 export type PropertyPhoto = {
   src: string;
   alt: string; // describes what is in the photo, for screen readers
@@ -41,7 +40,7 @@ export type PropertySummary = {
   areaUnit: "Marla" | "Kanal" | "sq ft";
   amenities: Amenity[];
   listedAt: string; // ISO date the listing went live; drives "Newest" sorting
-  /** Ordered photos (property_images rows, served from Supabase Storage). The first one is the cover used on
+  /** Ordered photos (property_images rows, served from AWS S3). The first one is the cover used on
    *  cards. When empty or absent, the designed placeholder for the property type is shown instead. */
   images?: PropertyPhoto[];
 };

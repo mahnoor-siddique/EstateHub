@@ -1,4 +1,3 @@
-import { readFileSync } from "node:fs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import nextConfig from "@/next.config";
 import { managedAgentImagePath, managedPropertyImagePath } from "@/lib/admin/storage";
@@ -228,10 +227,8 @@ describe("validateImageFile", () => {
 describe("photo size limit", () => {
   const MB = 1024 * 1024;
 
-  it("is 5 MB, the same as the property-images bucket's own limit", () => {
+  it("is 5 MB", () => {
     expect(IMAGE_MAX_BYTES).toBe(5 * MB);
-    const bucket = readFileSync("supabase/migrations/20261001000000_property_images_bucket.sql", "utf8");
-    expect(bucket).toContain(`${IMAGE_MAX_BYTES}, -- 5 MB in bytes`); // file_size_limit
   });
 
   it.each([5 * MB + 1, 6 * MB, 9.9 * MB])("rejects a %i-byte photo with a clear size error", async (size) => {
@@ -296,7 +293,7 @@ describe("managed S3 image paths", () => {
     expect(managedAgentImagePath(AGENT_ID, null)).toBeNull();
   });
 
-  it("never treats a Supabase Storage portrait as deletable, seeded or uploaded", () => {
+  it("never treats an old Supabase Storage portrait URL as deletable", () => {
     expect(managedAgentImagePath(AGENT_ID, `${supabase}/agents/sara-malik.webp`)).toBeNull();
     expect(managedAgentImagePath(AGENT_ID, `${supabase}/agents/${AGENT_ID}/${uploaded}`)).toBeNull();
   });

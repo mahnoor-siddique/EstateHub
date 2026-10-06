@@ -1,11 +1,9 @@
 import type { NextConfig } from "next";
 
-// Photos uploaded from /admin are served from the AWS S3 image bucket; older ones are still served
-// from the project's public Supabase Storage bucket. next/image may only optimise remote images
-// from exactly those two buckets; any other remote URL is refused with a 400.
-// (Next.js loads .env.local before reading this file. Both values are fixed at build time.)
+// Listing photos and agent portraits are served from the AWS S3 image bucket. next/image may only
+// optimise remote images from exactly that bucket; any other remote URL is refused with a 400.
+// (Next.js loads .env.local before reading this file. The value is fixed at build time.)
 const s3Bucket = process.env.AWS_S3_BUCKET;
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/+$/, "");
 
 const nextConfig: NextConfig = {
   output: "standalone",
@@ -20,10 +18,7 @@ const nextConfig: NextConfig = {
     },
   },
   images: {
-    remotePatterns: [
-      ...(supabaseUrl ? [new URL(`${supabaseUrl}/storage/v1/object/public/property-images/**`)] : []),
-      ...(s3Bucket ? [new URL(`https://${s3Bucket}.s3.eu-north-1.amazonaws.com/**`)] : []),
-    ],
+    remotePatterns: s3Bucket ? [new URL(`https://${s3Bucket}.s3.eu-north-1.amazonaws.com/**`)] : [],
   },
 };
 

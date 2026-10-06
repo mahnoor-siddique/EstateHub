@@ -9,8 +9,6 @@ import type { ValidImage } from "@/lib/validations/image-upload";
  *   properties/<property id>/<random>.<ext>  — listing photos uploaded from /admin
  *   agents/<agent id>/<random>.<ext>         — agent portraits uploaded from /admin
  * The database stores each file's S3 URL (property_images.image_url, agents.profile_image).
- * Older photos still live in Supabase Storage until they are migrated; nothing here uploads to
- * or deletes from Supabase Storage.
  */
 
 const UPLOADED_FILE = "[0-9a-f-]{36}\\.(jpg|png|webp)";
@@ -57,7 +55,7 @@ function managedImagePath(folder: string, url: string | null): string | null {
 
 /**
  * The S3 key of a listing photo that /admin uploaded for this property, from its image_url — or
- * null for anything else (photos still in Supabase Storage, other URLs), which are never deleted.
+ * null for anything else (other files, other URLs), which are never deleted.
  */
 export function managedPropertyImagePath(propertyId: string, imageUrl: string | null): string | null {
   return managedImagePath(`properties/${propertyId}`, imageUrl);
@@ -65,7 +63,7 @@ export function managedPropertyImagePath(propertyId: string, imageUrl: string | 
 
 /**
  * The S3 key of an agent portrait that /admin uploaded for this agent, from its profile_image — or
- * null for anything else (portraits still in Supabase Storage, other URLs), which are never deleted.
+ * null for anything else (other files, other URLs), which are never deleted.
  */
 export function managedAgentImagePath(agentId: string, profileImage: string | null): string | null {
   return managedImagePath(`agents/${agentId}`, profileImage);

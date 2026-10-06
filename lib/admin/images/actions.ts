@@ -12,8 +12,7 @@ import { validateImageFile, validatePhotoText } from "@/lib/validations/image-up
 /*
  * Server Actions for a property's photos on /admin/properties/[id]. Admin-only (requireAdmin, then
  * the database policies again). Files go to the AWS S3 image bucket; each property_images row
- * records the file's S3 URL in image_url and leaves storage_path null (that column is only set on
- * older photos still in Supabase Storage, whose files these actions never touch).
+ * records the file's S3 URL in image_url.
  */
 
 type PhotoField = "photo" | "alt_text" | "label";
@@ -66,7 +65,6 @@ export async function uploadPropertyImage(propertyId: string, _prev: State, form
     ({ error } = await supabase.from("property_images").insert({
       property_id: propertyId,
       image_url: imageUrl,
-      storage_path: null,
       ...text.data,
       sort_order: sortOrder,
     }));

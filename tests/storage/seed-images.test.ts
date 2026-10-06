@@ -2,28 +2,28 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 /*
- * The seeded property_images rows (supabase/seed.sql) after the move to Supabase Storage: every
- * photo must have a well-formed storage_path in its property's folder, and image_url must be the
- * public URL of exactly that object. Reads the file only; no database needed.
+ * The seeded property_images rows and agent portraits (supabase/seed.sql) after the move to AWS
+ * S3: every image_url / profile_image must be a well-formed S3 URL in its own property's or
+ * agent's folder, and storage_path must be null. Reads the file only; no database needed.
  */
 
 type SeedImage = {
   id: string;
   propertyId: string;
   imageUrl: string;
-  storagePath: string;
   sortOrder: number;
 };
 
+const S3_BUCKET_URL = /^https:\/\/estatehub-property-images-\d+\.s3\.eu-north-1\.amazonaws\.com\//;
+
 const seed = readFileSync("supabase/seed.sql", "utf8");
 const insert = seed.slice(seed.indexOf("insert into public.property_images"));
-const ROW = /\('([0-9a-f-]{36})', '([0-9a-f-]{36})', '([^']+)', '([^']+)', '(?:[^']|'')*', '(?:[^']|'')*', (\d+)\)/g;
+const ROW = /\('([0-9a-f-]{36})', '([0-9a-f-]{36})', '([^']+)', null, '(?:[^']|'')*', '(?:[^']|'')*', (\d+)\)/g;
 const images: SeedImage[] = [...insert.matchAll(ROW)].map((m) => ({
   id: m[1],
   propertyId: m[2],
   imageUrl: m[3],
-  storagePath: m[4],
-  sortOrder: Number(m[5]),
+  sortOrder: Number(m[4]),
 }));
 
 describe("seeded property photos", () => {
@@ -37,36 +37,22 @@ describe("seeded property photos", () => {
     expect(perProperty).toEqual([6, 6, 6, 6, 6, 6]);
   });
 
-  it("uses property-N/<name>.webp storage paths, unique across the bucket", () => {
-    for (const { storagePath } of images) expect(storagePath).toMatch(/^property-[1-6]\/[a-z]+(-[a-z]+)*\.webp$/);
-    expect(new Set(images.map((i) => i.storagePath)).size).toBe(36);
-  });
-
-  it("keeps each property's photos in its own single folder", () => {
-    const folders = new Map<string, Set<string>>();
-    for (const i of images) {
-      const set = folders.get(i.propertyId) ?? new Set();
-      set.add(i.storagePath.split("/")[0]);
-      folders.set(i.propertyId, set);
+  it("points every photo at a unique WebP file in its own property's S3 folder", () => {
+    for (const { imageUrl, propertyId } of images) {
+      expect(imageUrl).toMatch(S3_BUCKET_URL);
+      expect(imageUrl.replace(S3_BUCKET_URL, "")).toMatch(new RegExp(`^properties/${propertyId}/[a-z]+(-[a-z]+)*\\.webp$`));
     }
-    expect([...folders.values()].every((set) => set.size === 1)).toBe(true);
-    expect(new Set([...folders.values()].map((set) => [...set][0])).size).toBe(6);
+    expect(new Set(images.map((i) => i.imageUrl)).size).toBe(36);
   });
 
   it("starts every gallery with main.webp at position 0", () => {
     const covers = images.filter((i) => i.sortOrder === 0);
     expect(covers).toHaveLength(6);
-    expect(covers.every((i) => i.storagePath.endsWith("/main.webp"))).toBe(true);
+    expect(covers.every((i) => i.imageUrl.endsWith("/main.webp"))).toBe(true);
   });
 
-  it("sets image_url to the public Storage URL of the same object", () => {
-    for (const { imageUrl, storagePath } of images) {
-      expect(imageUrl).toMatch(/^https:\/\/[a-z0-9]+\.supabase\.co\/storage\/v1\/object\/public\/property-images\//);
-      expect(imageUrl.endsWith(`/property-images/${storagePath}`)).toBe(true);
-    }
-  });
-
-  it("no longer references the local /images/properties files", () => {
+  it("no longer references Supabase Storage or the local /images/properties files", () => {
+    expect(insert).not.toContain("supabase.co");
     expect(insert).not.toContain("/images/properties/");
   });
 });
@@ -84,19 +70,28 @@ describe("seeded agent portraits", () => {
     ]),
   );
 
-  it("gives each agent their own portrait in the property-images bucket's agents/ folder", () => {
+  it("gives each agent their own portrait in their own S3 folder", () => {
     expect(portraits).toEqual(
       new Map(
         [
           ["Sara Malik", "6ceb4716-6d87-591e-9ead-212a4e979b44", "sara-malik"],
           ["Hamza Qureshi", "a95715d6-6aea-5d6c-a00e-d167473cf091", "hamza-qureshi"],
           ["Ayesha Rehman", "08b56262-64ee-5f94-ad69-a602daed5be9", "ayesha-rehman"],
-        ].map(([name, id, file]) => [name, { id, url: expect.stringMatching(new RegExp(`^https://[a-z0-9]+\\.supabase\\.co/storage/v1/object/public/property-images/agents/${file}\\.webp$`)) }]),
+        ].map(([name, id, file]) => [
+          name,
+          {
+            id,
+            url: expect.stringMatching(
+              new RegExp(`^https://estatehub-property-images-\\d+\\.s3\\.eu-north-1\\.amazonaws\\.com/agents/${id}/${file}\\.webp$`),
+            ),
+          },
+        ]),
       ),
     );
   });
 
-  it("no longer references the local /images/agents files", () => {
+  it("no longer references Supabase Storage or the local /images/agents files", () => {
+    expect(agentsInsert).not.toContain("supabase.co");
     expect(agentsInsert).not.toContain("/images/agents/");
   });
 });

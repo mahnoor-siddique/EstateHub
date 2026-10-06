@@ -17,7 +17,7 @@ const WARM = "#f3cf8a"; // lit windows
 type Props = {
   scene: Scene;
   tone?: Tone;
-  /** Real image URL (e.g. a listing photo in Supabase Storage). Without one, the designed placeholder is shown. */
+  /** Real image URL (e.g. a listing photo in AWS S3). Without one, the designed placeholder is shown. */
   src?: string;
   alt?: string;
   sizes?: string;

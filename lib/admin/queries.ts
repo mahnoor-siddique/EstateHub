@@ -54,7 +54,7 @@ export async function getAdminProperty(id: string): Promise<AdminPropertyDetail 
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("properties")
-    .select("*, property_images(id, image_url, storage_path, alt_text, label, sort_order)")
+    .select("*, property_images(id, image_url, alt_text, label, sort_order)")
     .eq("id", id)
     .order("sort_order", { referencedTable: "property_images" })
     .maybeSingle();
@@ -89,7 +89,6 @@ export async function getAdminProperty(id: string): Promise<AdminPropertyDetail 
     images: data.property_images.map((image) => ({
       id: image.id,
       src: toPropertyPhoto(image).src,
-      storagePath: image.storage_path,
       altText: image.alt_text,
       label: image.label,
       sortOrder: image.sort_order,
