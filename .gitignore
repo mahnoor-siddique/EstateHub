@@ -52,3 +52,6 @@ terraform/*.tfstate.*
 terraform/crash.log
 terraform/crash.*.log
 terraform/terraform.tfvars
+
+lambda/node_modules/
+lambda/function.zip

@@ -149,3 +149,125 @@ resource "aws_instance" "estatehub_ec2" {
     Name = "EstateHub-EC2"
   }
 }
+###                                         LAMBDA                                ###
+#FOR IAM ROLE PERMISSION
+resource "aws_iam_role" "estatehub_lambda" {
+  name = "estatehub-lambda-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+
+    Statement = [{
+      Effect = "Allow"
+
+      Principal = {
+        Service = "lambda.amazonaws.com"
+      }
+
+      Action = "sts:AssumeRole"
+    }]
+  })
+
+  tags = {
+    Name = "EstateHub-Lambda-Role"
+  }
+}
+
+#LAMBDA FUNCTIONS
+resource "aws_lambda_function" "estatehub_api" {
+  function_name = "estatehub-api"
+
+  role    = aws_iam_role.estatehub_lambda.arn
+  handler = "index.handler"
+  runtime = "nodejs20.x"
+
+  filename         = "${path.module}/../lambda/function.zip"
+  source_code_hash = filebase64sha256("${path.module}/../lambda/function.zip")
+
+  tags = {
+    Name = "EstateHub-API"
+  }
+}
+
+###                                         DYNAMODB                            ###
+#DynamoDB table.Ismein Lambda EstateHub ki activity records store HOGI.
+
+resource "aws_dynamodb_table" "estatehub_activity" {
+  name         = "estatehub-activity"
+  billing_mode = "PROVISIONED"
+
+  read_capacity  = 1
+  write_capacity = 1
+
+  hash_key = "id"
+
+  attribute {
+    name = "id"
+    type = "S"
+  }
+
+  tags = {
+    Name = "EstateHub-Activity"
+  }
+}
+
+###                                      API-GATEWAY                ###
+
+#API Gateway HTTP API add
+
+resource "aws_apigatewayv2_api" "estatehub_api" {
+  name          = "estatehub-api"
+  protocol_type = "HTTP"
+
+  tags = {
+    Name = "EstateHub-API-Gateway"
+  }
+}
+
+resource "aws_apigatewayv2_integration" "estatehub_lambda" {
+  api_id                 = aws_apigatewayv2_api.estatehub_api.id
+  integration_type       = "AWS_PROXY"
+  integration_uri        = aws_lambda_function.estatehub_api.invoke_arn
+  payload_format_version = "2.0"
+}
+
+resource "aws_apigatewayv2_route" "estatehub_default" {
+  api_id    = aws_apigatewayv2_api.estatehub_api.id
+  route_key = "ANY /{proxy+}"
+  target    = "integrations/${aws_apigatewayv2_integration.estatehub_lambda.id}"
+}
+
+resource "aws_apigatewayv2_stage" "estatehub_default" {
+  api_id      = aws_apigatewayv2_api.estatehub_api.id
+  name        = "$default"
+  auto_deploy = true
+}
+
+#Lambda permission added
+
+resource "aws_lambda_permission" "estatehub_api_gateway" {
+  statement_id  = "AllowAPIGatewayInvoke"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.estatehub_api.function_name
+  principal     = "apigateway.amazonaws.com"
+
+  source_arn = "${aws_apigatewayv2_api.estatehub_api.execution_arn}/*/*"
+}
+
+#Give Lambda permission to write to DynamoDB
+
+resource "aws_iam_role_policy" "estatehub_lambda_dynamodb" {
+  name = "estatehub-lambda-dynamodb"
+  role = aws_iam_role.estatehub_lambda.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect = "Allow"
+      Action = [
+        "dynamodb:PutItem"
+      ]
+      Resource = aws_dynamodb_table.estatehub_activity.arn
+    }]
+  })
+}
